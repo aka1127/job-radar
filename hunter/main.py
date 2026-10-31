@@ -101,6 +101,12 @@ def doctor(cand):
     else:
         print("job alert mailbox: not set up (optional, see ALERTS_SETUP.md)")
     print("health ping:", "on" if cand.env("HEALTHCHECK_URL") else "off (optional: HEALTHCHECK_URL in .env)")
+    from . import geo, targets
+    code, cfg = targets.country(cand.config), cand.config
+    area = geo.home_area(targets.home_city(cfg), code, float(cfg.get("home_radius_km") or 40))
+    print(f"country: {code} ({geo.country_name(code)}); home: {targets.home_city(cfg) or 'not set'} "
+          f"({len(area)} places within {cfg.get('home_radius_km') or 40} km); "
+          f"CV languages: {', '.join(targets.cv_languages(cfg))}")
     from .store import Store
     store = Store(cand)
     print(f"career pages watched: {len(store.companies())}; jobs by status: {store.counts() or 'none yet'}")

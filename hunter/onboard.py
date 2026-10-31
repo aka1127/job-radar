@@ -223,8 +223,9 @@ RULES:
   {{}}. domain: "" (logos are drawn from the name).
 - skills.confirmed: groups of tools and skills the CV shows in use. skills.implied: direct consequences of the CV.
   skills.to_confirm: tools a recruiter might test that the CV only mentions in passing.
-- highlights: 4 short true facts (years of experience counted conservatively from the CV dates, written "N+ years
-  of experience" and its translations, countries, languages, availability). highlights_creative: [] unless the
+- highlights: 4 short true facts (years of experience as the CV itself states them, counted conservatively from
+  the dates only when the CV gives no number, written "N+ years of experience" and its translations; countries,
+  languages, availability). highlights_creative: [] unless the
   CV has audience or portfolio numbers.
 - writing_notes: 4-8 rules for writing this person's CVs and letters (how to present the main experiences, the
   years of experience wording, what never to claim, how to explain gaps or changes of field).
@@ -304,7 +305,7 @@ RULES:
   local language and English; must_match catches every search term and their variants; must_not_match drops
   internships, apprenticeships and freelance unless wanted, and the fields and levels they do not target.
 
-Answer with the YAML only, in one ```yaml block.
+Write every list as a block list, one item per line. Answer with the YAML only, in one ```yaml block.
 
 ANSWERS:
 {_dump(answers)}
