@@ -101,7 +101,8 @@ python -m hunter loop --who alex
 ```
 
 On Windows, `.\scripts\install-task.ps1 -Who alex` installs it as a scheduled task with no window: it starts at
-logon, restarts if it stops, and reloads itself when the code changes (only once the new code compiles).
+logon, restarts if it stops, and reloads itself when the code changes (only once the new code compiles). On macOS
+or Linux, run `python -m hunter --who alex --log data/alex.log loop` under `nohup`, `tmux` or a systemd service.
 
 ## One engine, any person, any country
 
