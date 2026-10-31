@@ -1,7 +1,7 @@
 # Job alert emails (10 minutes, optional but worth it)
 
-Some boards cannot be searched politely (APEC and Cadremploi answer bots with 403, Indeed's robots.txt forbids its
-offer pages, LinkedIn blocks frequent searches), but all of them email their alerts. Point those alerts at one
+Many boards cannot be searched politely (LinkedIn blocks frequent searches, Indeed's robots.txt forbids its offer
+pages, some answer bots with 403), but almost all of them email their alerts, in every country. Point those alerts at one
 mailbox: the engine reads it every hour (IMAP, never marking anything as read) and treats each job like any other
 (filter, triage, score, tailored pack in Telegram).
 
@@ -31,7 +31,14 @@ It should say "job alert mailbox: connected". The running loop picks it up at it
 
 ## 4. Alerts that send to that mailbox
 
-Daily alerts with the searches that matter, home region first, the contracts wanted:
+Daily alerts with the searches that matter, home area first, the contracts wanted.
+
+**Any country**: LinkedIn (job search, "Set alert", daily email) and Indeed (search, then the alert form under the
+results). Local boards whose emails link to their offers work too when their offer pages carry schema.org
+`JobPosting` data; otherwise add a reader for them in `hunter/alerts.py` (see the ones below).
+
+**France**, readers included:
+
 
 | Board | How | What the engine does with the email |
 |---|---|---|

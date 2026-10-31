@@ -5,7 +5,7 @@ description: Use this skill whenever a resume needs to be formatted, reviewed, o
 
 # ATS / Workday Parse-Safe Resume Formatting
 
-> Installed in the Job Search project from https://github.com/msdanyg/ats-resume-skill (MIT, commit 10bb76b,
+> Installed in Job Radar from https://github.com/msdanyg/ats-resume-skill (MIT, commit 10bb76b,
 > 2026-07-08) after an audit (docs/audits/resume-agent-packs-2026-10-30.md). One local change: Rule Set A item 6.
 > In this project the plain CV (`templates/cv.html.j2` with `plain=True`) applies Rule Sets B to D, and
 > `hunter/ats.py` checks the result.
@@ -38,7 +38,7 @@ The single most common parse failure is a date range with no month.
 3. **Current role ends in `Present`.** Never `current`, `now`, `ongoing`, or an open-ended dash.
 4. **No apostrophe years (`'21`), no seasons (`Summer 2020`).** A parser has no dictionary entry for which month "Summer" means.
 5. **Dates go on their own line**, directly under the employer line, with nothing else on it — no location, no tab-separated text.
-6. **If the month is unknown, ask the candidate for it.** (Job Search project change: the upstream advice to pick a placeholder month is dropped, because this project never puts an unconfirmed fact on a CV. Until the candidate answers, the year-only range stays and the risk is flagged.)
+6. **If the month is unknown, ask the candidate for it.** (Job Radar change: the upstream advice to pick a placeholder month is dropped, because this project never puts an unconfirmed fact on a CV. Until the candidate answers, the year-only range stays and the risk is flagged.)
 
 ---
 

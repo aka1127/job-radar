@@ -7,9 +7,11 @@ Where Job Radar goes from a personal engine to something anyone can run.
 - **Engine and person are separate.** Everything about a person lives in `candidates/<name>/` (`profile.yaml` for
   facts, `config.yaml` for targets): home region, job families, priority sector, CV angles, writing rules, title
   filters. The engine holds no one's data.
-- **Onboarding.** `python -m hunter onboard <name> --cv cv.pdf` writes both files from a CV and a few answers,
-  checks them, and lists the questions that would make the CV stronger.
+- **Onboarding.** `python -m hunter onboard <name> --cv cv.pdf` interviews the person (country first), asks
+  follow-up questions about their CV, writes both files and checks them.
 - **Triage before scoring.** One quick call sorts 80 titles; only plausible postings get a full score.
+- **Any country, any field.** Country, home area, contracts and CV languages (7 languages) come from the config;
+  places are matched with GeoNames; the onboarding interview starts with the country.
 - **Review fixes (Oct 2026).** Duplicate sends across boards, one deadline for all career platforms, unscored
   postings that expire.
 
@@ -19,9 +21,11 @@ Where Job Radar goes from a personal engine to something anyone can run.
    once (boards, career pages, archive) and match the shared pool for every person.
 2. **Web dashboard.** A small page served by the engine, installable on a phone's home screen: jobs, statuses,
    settings. Telegram stays the notification channel.
-3. **Cleaner sources by default.** Official APIs (France Travail, company ATS boards), open data, feeds and alert
+3. **More languages and country packs.** Arabic and other CV languages (right-to-left layouts),
+   national job APIs beyond France Travail.
+4. **Cleaner sources by default.** Official APIs (France Travail, company ATS boards), open data, feeds and alert
    emails first; board scraping only where the board allows it.
-4. **Always-on host.** A laptop pauses when its lid closes; a small server or mini PC keeps the loop running.
+5. **Always-on host.** A laptop pauses when its lid closes; a small server or mini PC keeps the loop running.
 
 ## Known limits
 

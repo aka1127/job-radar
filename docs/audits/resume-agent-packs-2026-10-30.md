@@ -15,7 +15,7 @@ title lines, DOCX vs PDF).
 | Long always-loaded description (one skill) | low | SKILL.md frontmatter |
 
 Windows: OK. Context cost: 1 skill, hooks: none.
-Install: copy `SKILL.md` and `references/` to `.claude/skills/ats-resume-formatting/` in the Job Search project.
+Install: copy `SKILL.md` and `references/` to `.claude/skills/ats-resume-formatting/` in Job Radar.
 Use: ats-auditor and the strict-portal CV variant. Ignore the placeholder-month advice (truth rules).
 
 ## Audit: resume-helper (https://github.com/MadeByTokens/resume-helper)

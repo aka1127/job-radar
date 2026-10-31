@@ -32,7 +32,7 @@ Also read `candidates/<name>/FOR_<NAME>.md` if it exists, so you do not repeat q
   ("about 30%"); a guess is not.
 - At most 4 questions per claim, most valuable first.
 
-## Claim types (marketing)
+## Claim types (marketing rows first; the same pattern works for any field, see the last rows)
 
 | Type | Triggers | Questions | Template |
 |------|----------|-----------|----------|
@@ -46,6 +46,11 @@ Also read `candidates/<name>/FOR_<NAME>.md` if it exists, so you do not repeat q
 | Projects and stakeholders | led, coordinated, stakeholders, cross-functional | How many projects at once? Which teams, how many people? Budget? Deadline met? | "Ran {n} projects with {teams} ({people} people), delivered on time" |
 | Events, podcast, content series | podcast, episodes, events, webinars | How many episodes or events? Audience, listeners or attendees? Leads from it? | "Hosted {n} episodes reaching {audience} listeners" |
 | Recognition | won, 1st place, selected, scholarship | Out of how many? Who awarded it? | "{Award}, selected from {pool}" |
+| Sales and accounts | quota, revenue, accounts, renewals, upsell | Quota and attainment? Revenue or deals per quarter? Accounts managed? Renewal rate? | "Closed {revenue} in {period} ({attainment}% of quota) across {n} accounts" |
+| Engineering and IT | built, migrated, latency, uptime, deploys | Users or requests served? Latency or cost before and after? Releases per month? Incidents? | "Cut {metric} from {before} to {after} for {users} users" |
+| Operations and logistics | throughput, stock, delivery, process, errors | Volume per day? Error or delay rate before and after? Cost saved? Team size? | "Raised throughput from {before} to {after} a day with a {n}-person team" |
+| Care, teaching, public service | patients, students, cases, classes | How many per day or year? Outcomes (pass rate, satisfaction)? Waiting times? | "Followed {n} {people} a year; {outcome} improved from {before} to {after}" |
+| Finance and admin | budget, closing, savings, audits, invoices | Budget size? Days to close before and after? Savings? Error rate? | "Shortened the monthly close from {before} to {after} days on a {budget} budget" |
 
 Default questions for anything else: what changed because of this work, by how much, over how long, and how
 was it measured?

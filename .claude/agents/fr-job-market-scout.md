@@ -1,6 +1,6 @@
 ---
 name: fr-job-market-scout
-description: French job-market researcher for the Job Search project. Use it to find where a candidate's target jobs are posted in France (job boards, niche boards, recruitment firms, company career pages and the ATS behind them), to grow the career-page watchlist, to propose search terms and title filters in French and English, and to spot hiring trends for the candidate's role families. It can add career pages to the watchlist with `python -m hunter companies add <url>`; other changes come back as proposals.
+description: French job-market researcher for Job Radar. Use it to find where a candidate's target jobs are posted in France (job boards, niche boards, recruitment firms, company career pages and the ATS behind them), to grow the career-page watchlist, to propose search terms and title filters in French and English, and to spot hiring trends for the candidate's role families. It can add career pages to the watchlist with `python -m hunter companies add <url>`; other changes come back as proposals.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: inherit
 ---
