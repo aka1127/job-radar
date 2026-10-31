@@ -1,9 +1,34 @@
 # Answers for `python -m hunter onboard <name> --cv cv.pdf --answers answers.yaml`.
-# Without --answers, the same questions are asked in the terminal. Plain words are fine.
-home: "Lyon"                                   # where you live (city or region)
-targets: "sports marketing, digital marketing, project manager, partnerships"   # the jobs you want
-priority_sector: "sport"                       # one sector you want first; leave empty for none
-contracts: "CDI, CDD"                          # CDI, CDD, freelance, internship...
-avoid: "call centres, field sales"             # jobs or fields to avoid
+# Without --answers the same questions are asked in the terminal, plus follow-up questions about the CV.
+# Plain words are fine; only country, home, targets, contracts and languages are required.
+
+# Where
+country: "France"                    # the country to work in: its English name or ISO code (FR, DE, GB, US, MA...)
+home: "Lyon"                         # the city you live in, or want to work around
+radius_km: 40                        # how far you can travel to work
+relocation: "yes, Paris or Bordeaux" # would you move, and where
+remote: "hybrid ok"                  # any / remote only / hybrid ok / on-site ok
+
+# What
+targets: "sports marketing, digital marketing, project manager, partnerships"
+level: "mid"                         # entry / mid / senior / lead / manager
+priority_sector: "sport"             # one sector you want first; leave empty for none
+company_types: "clubs, sports brands, agencies, scale-ups"
+avoid: "call centres, field sales"
+
+# Conditions
+contracts: "permanent, fixed-term"   # permanent, fixed-term, freelance, internship, apprenticeship
+schedule: "full-time"
+salary: "38000 EUR"                  # lowest yearly gross salary you would accept
 availability: "within a month"
-notes: "open to Paris and remote"              # mobility, remote, salary, anything else
+work_permit: "EU citizen"
+
+# Languages
+languages: "French native, English C1, Spanish B2, Portuguese basic"
+cv_languages: "en, fr"               # languages your CVs can be written in (en, fr, es, de, it, pt, nl)
+
+# You
+proud: "1.1M Instagram views in 30 days on my basketball media; 40K podcast plays"
+links: "https://courtside.example.com"
+packs_per_day: 10                    # tailored applications you can act on per day
+notes: "driving licence"

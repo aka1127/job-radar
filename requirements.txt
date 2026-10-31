@@ -10,3 +10,4 @@ python-dotenv>=1.0
 python-docx>=1.1
 protego==0.7.0          # robots.txt rules, checked before any page is crawled
 trafilatura==2.3.1      # main text of offer pages without structured data
+geonamescache==2.0.0      # countries, cities and coordinates (GeoNames, CC BY 4.0): places in any country

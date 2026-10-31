@@ -151,8 +151,11 @@ def loop(cand, every: int):
         log.info("telegram listener on")
     from . import sitemaps
 
-    # Sites that list every offer in a sitemap (jobposting.pro...), read politely in the background into the archive.
-    threading.Thread(target=sitemaps.harvest_forever, args=(stop,), daemon=True, name="sitemaps").start()
+    # French sites that list every offer in a sitemap (jobposting.pro...) and the State's open data, read politely in
+    # the background into the national archive: only for a candidate searching in France.
+    from .targets import country
+    if country(cand.config) == "FR":
+        threading.Thread(target=sitemaps.harvest_forever, args=(stop,), daemon=True, name="sitemaps").start()
     started, broken_seen = time.time(), ""
     while True:
         if code_changed(started):  # scripts/loop.cmd starts it again at once with the new code
@@ -227,7 +230,7 @@ def main():
     r.add_argument("--dry-run", action="store_true", help="scrape and filter only: no AI, nothing saved")
     r.add_argument("--hours", type=int, help="look back this many hours")
     r.add_argument("--limit", type=int, help="max application packs this run")
-    r.add_argument("--no-boards", action="store_true", help="skip LinkedIn, Indeed, HelloWork, France Travail")
+    r.add_argument("--no-boards", action="store_true", help="skip the job board searches and alert emails")
     r.add_argument("--no-careers", action="store_true", help="skip company career pages")
     sub.add_parser("bot", help="only the Telegram bot: buttons, job links, /status (no scraping)")
     lp = sub.add_parser("loop", help="run forever, plus the Telegram bot")
@@ -237,7 +240,7 @@ def main():
     sub.add_parser("base", help="render the generic EN/FR CVs")
     sub.add_parser("archive", help="what the national archive of postings holds")
     sub.add_parser("opendata", help="import the State's public-sector offers file now (data.gouv.fr)")
-    bd = sub.add_parser("boards", help="find company job boards with jobs in France in public ATS lists")
+    bd = sub.add_parser("boards", help="find company job boards with jobs in the candidate's country in public ATS lists")
     bd.add_argument("--refresh", action="store_true", help="download the latest lists first")
     hv = sub.add_parser("harvest", help="France Travail national harvest into the archive (needs API access)")
     hv.add_argument("--days", type=int, default=1, help="how far back (the API keeps about 31 days)")
@@ -290,10 +293,12 @@ def main():
     elif a.cmd == "boards":
         from .boards import discover, fetch_lists
         from .store import Store
+        from .targets import country
         folder = ROOT / "data" / "discovery"
         if a.refresh:
             print("lists fetched:", fetch_lists(folder))
-        print("boards added:", discover(Store(cand), folder, folder / "france_boards.csv"))
+        code = country(cand.config)
+        print("boards added:", discover(Store(cand), folder, folder / f"boards_{code.lower()}.csv", country=code))
     elif a.cmd == "opendata":
         from .archive import Archive
         from .opendata import import_due

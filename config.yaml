@@ -1,4 +1,5 @@
-# Defaults for every candidate. candidates/<name>/config.yaml overrides any key.
+# Engine defaults for every candidate. candidates/<name>/config.yaml overrides any key (and holds everything about
+# the person: country, home, targets, searches, filters). docs/configuration.md lists every key.
 
 # AI runs through the Claude Code CLI on your own Claude account (no API key).
 claude:
@@ -11,16 +12,16 @@ claude:
 
 sources:
   # Job board searches (through JobSpy). Off by default: LinkedIn, Indeed, Glassdoor and HelloWork forbid
-  # scraping in their terms and robots.txt (docs/job-boards-france.md). A candidate's config can turn one on, at
-  # the operator's own risk; their job alert emails (ALERTS_SETUP.md) bring the same jobs the respectful way.
+  # scraping in their terms and robots.txt. A candidate's config can turn one on, at the operator's own risk; their
+  # job alert emails (ALERTS_SETUP.md) bring the same jobs the respectful way. HelloWork exists in France only;
+  # Indeed and Glassdoor need a country JobSpy supports.
   linkedin: false
   indeed: false
   hellowork: false
-  glassdoor: false         # Glassdoor France, descriptions included
-  france_travail: true     # needs FRANCE_TRAVAIL_CLIENT_ID / _SECRET in .env, skipped otherwise
-  email_alerts: true       # job alert emails (Welcome to the Jungle, APEC, LinkedIn...) read from a mailbox;
-                           # needs ALERTS_IMAP_USER / ALERTS_IMAP_PASSWORD in .env, skipped otherwise
-  career_pages: true       # company career sites: Lever, Greenhouse, Ashby, Workable, SmartRecruiters,
+  glassdoor: false
+  france_travail: true     # France only: the official API, needs FRANCE_TRAVAIL_CLIENT_ID / _SECRET in .env
+  email_alerts: true       # job alert emails read from a mailbox (ALERTS_IMAP_USER / ALERTS_IMAP_PASSWORD in .env)
+  career_pages: true       # company career boards: Lever, Greenhouse, Ashby, Workable, SmartRecruiters, Workday,
                            # Teamtailor, Recruitee, Personio and any page with schema.org JobPosting data
 
 scraping:
@@ -35,18 +36,19 @@ scraping:
 
 career_pages:
   poll_every_hours: 3
-  max_minutes_per_run: 15  # per platform; boards not reached are polled first next run
+  max_minutes_per_run: 15  # for all platforms together; boards not reached are polled first next run
   max_new_companies_per_run: 15  # companies probed by name per run (about 20 small requests each)
   discover_every_hours: 24  # Claude searches the web for career pages once a day
   max_age_days: 45          # ignore postings older than this
 
+home_radius_km: 40         # cities this close to the candidate's home count as their home area (tier 1)
 send_hours: [8, 24]        # packs reach the candidate from 8:00 to midnight only; jobs found at night wait
-max_scores_per_run: 250    # Claude scores per run (Paris region and freshest first); a big catch-up spreads out
+max_scores_per_run: 250    # Claude scores per run (core targets, home area and freshest first)
 max_scores_per_day: 600    # and per day, to keep the Claude subscription for the packs that matter
 max_packs_per_run: 10
-max_packs_per_day: 30      # the best matches of the day, music first; lower it if it is too many to act on
+max_packs_per_day: 30      # the best matches of the day, priority sector first; lower it to what you can act on
 queue_days: 5              # good matches over the cap wait this long, best first
 pending_days: 7            # postings still unscored after this long (daily scoring cap) expire
-company_brief: true         # web research per company, used in outreach and interview prep
-brand_colors: true          # tint the designed CV and letter with the target company's brand color
-followup_after_days: 7     # French norm: follow up one week after applying
+company_brief: true        # web research per company, used in outreach and interview prep
+brand_colors: true         # tint the designed CV and letter with the target company's brand color
+followup_after_days: 7     # follow up one week after applying

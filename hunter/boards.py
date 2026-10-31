@@ -1,7 +1,7 @@
-"""Discover company job boards with jobs in France from public lists of ATS boards (for example the MIT-licensed
+"""Discover company job boards with jobs in the candidate's country from public lists of ATS boards (for example the MIT-licensed
 lists of github.com/Riley-Dorrington/job-board-aggregator: data/<ats>_companies.json). Each board is checked once
 through the public job API its platform offers for that purpose, a few at a time per platform; boards with at least
-one job in France join the watchlist (their postings then flow into the archive at every poll)."""
+one job in that country join the watchlist (their postings then flow into the archive at every poll)."""
 import csv
 import json
 import logging
@@ -13,7 +13,7 @@ from pathlib import Path
 
 import requests
 
-from . import careers
+from . import careers, geo
 
 log = logging.getLogger(__name__)
 HEADERS = careers.UA | {"Accept": "application/json"}
@@ -29,7 +29,7 @@ def _get_json(url: str, **kw):
 
 def greenhouse(slug: str) -> int:
     data = _get_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs")
-    return sum(careers.in_france((j.get("location") or {}).get("name") or "") for j in (data or {}).get("jobs", []))
+    return sum(careers.in_area((j.get("location") or {}).get("name") or "") for j in (data or {}).get("jobs", []))
 
 
 def lever(slug: str) -> int:
@@ -38,7 +38,7 @@ def lever(slug: str) -> int:
         jobs = r.json() if r is not None and r.ok else []
     except ValueError:
         jobs = []
-    return sum(careers.in_france(" ".join(filter(None, [(p.get("categories") or {}).get("location") or "",
+    return sum(careers.in_area(" ".join(filter(None, [(p.get("categories") or {}).get("location") or "",
                                                         p.get("country") or ""]))) for p in jobs if isinstance(p, dict))
 
 
@@ -49,7 +49,7 @@ def ashby(slug: str) -> int:
         addr = ((j.get("address") or {}).get("postalAddress") or {})
         where = " ".join(filter(None, [j.get("location") or "", addr.get("addressLocality") or "",
                                        addr.get("addressCountry") or ""]))
-        n += careers.in_france(where)
+        n += careers.in_area(where)
     return n
 
 
@@ -60,12 +60,13 @@ def workday(entry: str) -> int:
         return 0
     try:
         r = requests.post(f"https://{tenant}.{cluster}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs",
-                          json={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": "France"},
+                          json={"appliedFacets": {}, "limit": 20, "offset": 0,
+                                "searchText": geo.country_name(careers.COUNTRY)},
                           headers=HEADERS | {"Content-Type": "application/json"}, timeout=20)
         data = r.json() if r.ok else {}
     except (requests.RequestException, ValueError):
         return 0
-    return sum(careers.in_france(p.get("locationsText") or "") for p in data.get("jobPostings") or [])
+    return sum(careers.in_area(p.get("locationsText") or "") for p in data.get("jobPostings") or [])
 
 
 PROBES = {"greenhouse": (greenhouse, 4), "lever": (lever, 3), "ashby": (ashby, 3), "workday": (workday, 4)}
@@ -98,8 +99,9 @@ def fetch_lists(folder: Path) -> list[str]:
 
 
 def discover(store, lists: Path, report: Path | None = None, limit: int | None = None,
-             pause: tuple[float, float] = (0.15, 0.4)) -> dict[str, int]:
-    """Check every board of every list once; add the ones with jobs in France. Returns boards added per platform."""
+             pause: tuple[float, float] = (0.15, 0.4), country: str = "FR") -> dict[str, int]:
+    """Check every board of every list once; add the ones with jobs in the country. Returns boards added per platform."""
+    careers.COUNTRY = country.upper()
     known = {r["key"] for r in store.db.execute("select key from companies")}
     found: list[tuple[str, str, int]] = []
     lock = threading.Lock()
@@ -117,8 +119,8 @@ def discover(store, lists: Path, report: Path | None = None, limit: int | None =
                 if n:
                     found.append((ats, entry, n))
                 if done % 500 == 0:
-                    log.info("%s: %d/%d boards checked, %d with jobs in France", ats, done, len(entries),
-                             sum(1 for a, _, _ in found if a == ats))
+                    log.info("%s: %d/%d boards checked, %d with jobs in %s", ats, done, len(entries),
+                             sum(1 for a, _, _ in found if a == ats), careers.COUNTRY)
         with ThreadPoolExecutor(workers) as pool:
             list(pool.map(one, entries))
 
@@ -143,7 +145,7 @@ def discover(store, lists: Path, report: Path | None = None, limit: int | None =
     if report:
         with open(report, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["ats", "board", "jobs_in_france"])
+            w.writerow(["ats", "board", "jobs_in_country"])
             w.writerows(sorted(found, key=lambda f: -f[2]))
-    log.info("board discovery: %s added (%d boards with jobs in France)", added, len(found))
+    log.info("board discovery: %s added (%d boards with jobs in %s)", added, len(found), careers.COUNTRY)
     return added

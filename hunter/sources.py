@@ -1,4 +1,4 @@
-"""Job boards (LinkedIn, Indeed, HelloWork, Glassdoor, France Travail).
+"""Job boards (LinkedIn, Indeed, Glassdoor, HelloWork in France) and France Travail's official API (France only).
 Phase 1 reads cheap search-result pages. Phase 2 opens a job page only for postings that passed the
 filters, which keeps LinkedIn and HelloWork from rate-limiting us."""
 import html
@@ -47,13 +47,30 @@ def job(**kw) -> dict:
     return out
 
 
-def listing(site: str, term: str, location: str, hours: int, n: int) -> list[dict]:
+JOBSPY_NAMES = {"US": "usa", "GB": "uk", "CZ": "czech republic", "TR": "türkiye"}
+
+
+def jobspy_country(code: str) -> str | None:
+    """The country name JobSpy expects for Indeed and Glassdoor ("france", "usa"...), None when it has none."""
+    from jobspy.model import Country
+
+    from . import geo
+    name = JOBSPY_NAMES.get(code.upper(), geo.country_name(code).lower())
+    return name if name in {c.value for c in Country} else None
+
+
+def board_works(site: str, code: str) -> bool:
+    """HelloWork is French; Indeed and Glassdoor need a country JobSpy knows; LinkedIn searches by place."""
+    return code.upper() == "FR" if site == "hellowork" else bool(jobspy_country(code)) if site in ("indeed", "glassdoor") else True
+
+
+def listing(site: str, term: str, location: str, hours: int, n: int, country: str = "FR") -> list[dict]:
     from jobspy import scrape_jobs
 
     try:
         # Glassdoor sends descriptions 25 jobs per request: cheap enough to take them with the listing.
         df = scrape_jobs(site_name=[site], search_term=term, location=location, results_wanted=n,
-                         hours_old=hours, country_indeed="France", description_format="markdown",
+                         hours_old=hours, country_indeed=jobspy_country(country) or "usa", description_format="markdown",
                          fetch_description=site == "glassdoor", verbose=1)  # 1 keeps the 429 warnings RateLimitWatch needs
     except Exception as e:  # one failing board must never kill the run
         log.warning("%s '%s' failed: %s", site, term, e)
@@ -204,7 +221,7 @@ def _board(site: str, cfg: dict, hours: int) -> tuple[list[dict], int]:
                 return jobs, searches
             if any(loc["query"].endswith(c) for c in complete):
                 continue
-            batch = listing(site, term, loc["query"], hours, sc["results_per_search"])
+            batch = listing(site, term, loc["query"], hours, sc["results_per_search"], cfg.get("country") or "FR")
             searches += 1
             if len(batch) < sc["results_per_search"]:
                 complete.append(loc["query"])
@@ -229,9 +246,10 @@ def collect(cand, hours: dict[str, int]) -> list[dict]:
     The boards run side by side (each keeps its own pace), so adding a board barely lengthens a run."""
     cfg = cand.config
     WATCH.blocked.clear()  # a block lasts one run, also inside the long-running loop
-    sites = [s for s in BOARDS if cfg["sources"].get(s) and s in hours]
+    code = (cfg.get("country") or "FR").upper()
+    sites = [s for s in BOARDS if cfg["sources"].get(s) and s in hours and board_works(s, code)]
     work = [(s, lambda s=s: _board(s, cfg, hours[s])) for s in sites]
-    if cfg["sources"].get("france_travail"):
+    if cfg["sources"].get("france_travail") and code == "FR":
         work.append(("france_travail", lambda: _france_travail(cfg, max(hours.values(), default=24))))
     jobs: list[dict] = []
     searches = 0

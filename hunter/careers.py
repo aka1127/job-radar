@@ -23,6 +23,7 @@ import requests
 from bs4 import BeautifulSoup
 from protego import Protego
 
+from . import geo, targets
 from .sources import BOARD_COMPANY, job
 from .text import fold, slug
 
@@ -120,6 +121,17 @@ def in_france(location: str) -> bool:
     return bool(IN_FRANCE.search(fold(location)))
 
 
+COUNTRY, HOME = "FR", ""  # the candidate's country (ISO code) and home city, set by poll() from the config
+
+
+def in_area(location: str, empty: bool = False) -> bool:
+    """The posting is in the candidate's country. empty: the answer for a posting with no location at all (a
+    board added for its jobs in the country usually means there)."""
+    if not (location or "").strip():
+        return empty
+    return in_france(location) if COUNTRY == "FR" and in_france(location) else geo.in_country(location, COUNTRY)
+
+
 def parse_ats_url(url: str) -> tuple[str, str] | None:
     for ats, pattern in ATS_URLS:
         m = re.search(pattern, url or "", re.I)
@@ -157,7 +169,7 @@ def lever(slug, company, title_ok):
     for p in (r.json() if r is not None else []):
         cat = p.get("categories") or {}
         loc = " / ".join(cat.get("allLocations") or [cat.get("location") or ""]) + f" {p.get('country') or ''}"
-        if not title_ok(p.get("text", "")) or not in_france(loc):
+        if not title_ok(p.get("text", "")) or not in_area(loc):
             continue
         desc = "\n\n".join([p.get("descriptionPlain", ""),
                             *[f"{l.get('text')}\n{text_of(l.get('content'))}" for l in p.get("lists", [])],
@@ -170,7 +182,7 @@ def greenhouse(slug, company, title_ok):
     for p in (r.json().get("jobs", []) if r is not None and r.ok else []):
         loc = " / ".join([(p.get("location") or {}).get("name") or "",
                           *[(o.get("location") or o.get("name") or "") for o in p.get("offices", [])]])
-        if not title_ok(p.get("title", "")) or not in_france(loc):
+        if not title_ok(p.get("title", "")) or not in_area(loc):
             continue
         yield _job("greenhouse", slug, p.get("company_name") or company, p["id"], p["title"], loc,
                    p["absolute_url"], p.get("first_published") or p.get("updated_at"), text_of(p.get("content")))
@@ -182,7 +194,7 @@ def ashby(slug, company, title_ok):
         country = ((p.get("address") or {}).get("postalAddress") or {}).get("addressCountry") or ""
         loc = " / ".join([p.get("location") or "", *[s.get("location", "") for s in p.get("secondaryLocations") or []],
                           country])
-        if not p.get("isListed", True) or not title_ok(p.get("title", "")) or not in_france(loc):
+        if not p.get("isListed", True) or not title_ok(p.get("title", "")) or not in_area(loc):
             continue
         yield _job("ashby", slug, company, p["id"], p["title"], loc, p["jobUrl"], p.get("publishedAt"),
                    p.get("descriptionPlain") or text_of(p.get("descriptionHtml")))
@@ -196,7 +208,7 @@ def workable(slug, company, title_ok):
     for p in data.get("jobs", []):
         locs = [f"{l.get('city', '')} {l.get('country', '')}" for l in p.get("locations") or []]
         loc = " / ".join(locs or [f"{p.get('city', '')} {p.get('country', '')}"])
-        if not title_ok(p.get("title", "")) or not in_france(loc):
+        if not title_ok(p.get("title", "")) or not in_area(loc):
             continue
         yield _job("workable", slug, data.get("name") or company, p.get("shortcode"), p["title"], loc,
                    p.get("url") or p.get("shortlink"), p.get("published_on") or p.get("created_at"),
@@ -204,7 +216,7 @@ def workable(slug, company, title_ok):
 
 
 def smartrecruiters(slug, company, title_ok):
-    r = get(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings?country=fr&limit=100")
+    r = get(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings?country={COUNTRY.lower()}&limit=100")
     for p in (r.json().get("content", []) if r is not None and r.ok else []):
         loc = p.get("location") or {}
         where = f"{loc.get('city', '')} {loc.get('region', '')} {loc.get('country', '')}"
@@ -233,7 +245,7 @@ def teamtailor(slug, company, title_ok):
     for item in root.iter("item"):
         title = item.findtext("title") or ""
         loc = " ".join(t.text or "" for t in item.iter() if t.tag.split("}")[-1] in ("city", "country", "name"))
-        if not title_ok(title) or not in_france(loc or "france"):
+        if not title_ok(title) or not in_area(loc, empty=True):
             continue
         link = item.findtext("link") or ""
         yield _job("teamtailor", slug, company, link.rstrip("/").split("/")[-1], title, loc, link,
@@ -244,7 +256,7 @@ def recruitee(slug, company, title_ok):
     r = get(f"https://{slug}.recruitee.com/api/offers/")
     for p in (r.json().get("offers", []) if r is not None and r.ok else []):
         loc = f"{p.get('location', '')} {p.get('city', '')} {p.get('country', '')}"
-        if not title_ok(p.get("title", "")) or not in_france(loc):
+        if not title_ok(p.get("title", "")) or not in_area(loc):
             continue
         yield _job("recruitee", slug, p.get("company_name") or company, p["id"], p["title"], loc, p.get("careers_url"),
                    p.get("published_at"), text_of(f"{p.get('description', '')}{p.get('requirements', '')}"))
@@ -259,7 +271,7 @@ def personio(slug, company, title_ok):
         return
     for p in ET.fromstring(r.content).iter("position"):
         title, loc = p.findtext("name") or "", p.findtext("office") or ""
-        if not title_ok(title) or not in_france(loc):
+        if not title_ok(title) or not in_area(loc):
             continue
         desc = "\n\n".join(f"{d.findtext('name')}\n{text_of(d.findtext('value'))}" for d in p.iter("jobDescription"))
         yield _job("personio", slug, company, p.findtext("id"), title, loc,
@@ -288,7 +300,7 @@ def workday(slug, company, title_ok, max_jobs: int = 300):
             return {}
 
     first = page("", 0)
-    searches = [""] if (first.get("total") or 0) <= max_jobs else ["France", "Paris"]
+    searches = [""] if (first.get("total") or 0) <= max_jobs else [geo.country_name(COUNTRY), *([HOME] if HOME else [])]
     seen = set()
     for text in searches:
         offset, data = 0, first if text == "" else page(text, 0)
@@ -296,7 +308,7 @@ def workday(slug, company, title_ok, max_jobs: int = 300):
         while data.get("jobPostings"):
             for p in data["jobPostings"]:
                 path, title, loc = p.get("externalPath", ""), p.get("title", ""), p.get("locationsText", "")
-                if path in seen or not title_ok(title) or not (in_france(loc) or re.match(r"\d+ locations", loc, re.I)):
+                if path in seen or not title_ok(title) or not (in_area(loc) or re.match(r"\d+ locations", loc, re.I)):
                     continue
                 seen.add(path)
                 try:
@@ -305,7 +317,7 @@ def workday(slug, company, title_ok, max_jobs: int = 300):
                 except (requests.RequestException, ValueError):
                     info = {}
                 where = info.get("location") or loc
-                if not info or not in_france(f"{where} {(info.get('country') or {}).get('descriptor', '')}"):
+                if not info or not in_area(f"{where} {(info.get('country') or {}).get('descriptor', '')}"):
                     continue
                 yield _job("workday", slug, company, info.get("jobReqId") or path, info.get("title") or title, where,
                            info.get("externalUrl") or f"https://{host}/{site}{path}", info.get("startDate"),
@@ -449,7 +461,7 @@ def _feed(url: str, company: str, title_ok, multi: bool):
             place = place or m.group(1).strip()
         if not title or not link or BOARD_COMPANY.match(firm.strip()):
             continue
-        if not in_france(f"{place} {' '.join(cats)}" or "france") and place:
+        if place and not in_area(f"{place} {' '.join(cats)}"):
             continue
         if len(desc) < 200 and title_ok(title) and opened < 10:  # short summary: read the offer page itself
             opened += 1
@@ -616,7 +628,7 @@ def jsonld(url, company, title_ok, max_pages: int = 25, seen=None):
     for d in direct:
         j = from_posting(d, url, "career page")
         j["company"] = j["company"] or company
-        if title_ok(j["title"]) and in_france(j["location"] or "france"):
+        if title_ok(j["title"]) and in_area(j["location"], empty=True):
             yield j
     if direct:
         return
@@ -636,7 +648,7 @@ def jsonld(url, company, title_ok, max_pages: int = 25, seen=None):
         for d in postings_on(page.text) if page is not None and page.ok else []:
             j = from_posting(d, href, "career page")
             j["company"] = j["company"] or company
-            if in_france(j["location"] or "france"):
+            if in_area(j["location"], empty=True):
                 yield j
 
 
@@ -819,6 +831,8 @@ def poll(store, cfg: dict, title_ok, keep=None, workers: int = 16) -> list[dict]
     other with a pause, so a big watchlist takes about as long as its biggest platform."""
     from concurrent.futures import ThreadPoolExecutor
 
+    global COUNTRY, HOME
+    COUNTRY, HOME = targets.country(cfg), targets.home_city(cfg)
     cp = cfg["career_pages"]
     cutoff = (datetime.now(timezone.utc) - timedelta(days=cp["max_age_days"])).date().isoformat()
     read_before = {r[0] for r in store.db.execute("select url from jobs")}  # threads cannot share the store

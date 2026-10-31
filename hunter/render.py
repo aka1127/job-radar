@@ -17,22 +17,13 @@ from pypdf import PdfReader
 from . import logos, targets
 from .ats import role_title
 from .candidate import ROOT, Candidate
+from .i18n import LABELS, date_line, field
 from .text import display_title, local_dates
 
 log = logging.getLogger(__name__)
 
-LABELS = {
-    "en": dict(profile="Profile", skills="Key skills", experience="Professional experience", education="Education",
-               certifications="Certifications", languages="Languages", achievements="Achievements & involvement",
-               projects="Projects & involvement", letter="Cover letter", subject="Application for the position of"),
-    "fr": dict(profile="Profil", skills="Compétences clés", experience="Expérience professionnelle", education="Formation",
-               certifications="Certifications", languages="Langues", achievements="Distinctions & engagements",
-               projects="Projets & engagements", letter="Lettre de motivation", subject="Objet : Candidature au poste de"),
-}
 PLACES_FR = {"UAE": "Émirats arabes unis", "Spain": "Espagne", "Morocco": "Maroc", "Barcelona": "Barcelone",
              "Dubai": "Dubaï", "Lisbon": "Lisbonne"}
-MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre",
-             "novembre", "décembre"]
 MIN_SCALE = 0.86  # below this the text gets too small: shorten the content instead
 # Framing = the job family the CV is written for (see targets.framing). With the candidate's config it picks the
 # optional parts: the creative tiles (cv.creative_families), the portfolio link in the header
@@ -125,7 +116,8 @@ DEFAULT_ICONS = ["briefcase", "globe", "chat", "check"]
 def _dots(level: str) -> int:
     """Language level as 0-5 dots, for the designed CV only."""
     lv = level.lower()
-    if any(w in lv for w in ("native", "maternelle", "bilingual", "bilingue", "c2")) and "c1/c2" not in lv:
+    if any(w in lv for w in ("native", "maternelle", "bilingual", "bilingue", "c2", "muttersprache", "nativo",
+                             "nativa", "madrelingua", "moedertaal", "materna")) and "c1/c2" not in lv:
         return 5
     return 4 if "c1" in lv else 3 if "b2" in lv else 2
 
@@ -152,23 +144,23 @@ def assemble(content: dict, cand: Candidate) -> tuple[dict, str]:
         if not e:
             continue
         logo = logos.ensure(folder, e["id"], e["company"], e.get("domain", ""), e.get("badge", ""))
-        title = (item.get("alt_title") and e.get(f"title_alt_{lang}")) or e[f"title_{lang}"]
+        title = (item.get("alt_title") and field(e, "title_alt", lang)) or field(e, "title", lang)
         split = re.match(r"(.*?)\s*\(([^()]+)\)\s*$", title)  # "Analyste (alternance)" for strict parsers
         experience.append(dict(title=title, title_plain=split.group(1) if split else title,
                                note=split.group(2).capitalize() if split else "",
-                               company=e.get(f"company_{lang}") or e["company"], location=place(e["location"], lang),
-                               context=e.get(f"context_{lang}", ""), dates=local_dates(e, lang),
+                               company=field(e, "company", lang), location=place(e["location"], lang),
+                               context=field(e, "context", lang), dates=local_dates(e, lang),
                                bullets=item.get("bullets", []), logo=logos.data_uri(logo)))
     education = []
     for i, e in enumerate(p["education"]):
         logo = logos.ensure(folder, f"edu-{i}", e["school"], e.get("domain", ""), e.get("badge", ""))
-        education.append(dict(degree=e[f"degree_{lang}"], school=e["school"], location=place(e["location"], lang),
+        education.append(dict(degree=field(e, "degree", lang), school=e["school"], location=place(e["location"], lang),
                               dates=local_dates(e, lang), logo=logos.data_uri(logo),
-                              detail=(framing and e.get(f"detail_{framing}_{lang}")) or e[f"detail_{lang}"]))
-    languages = [{"text": l["fr"] if lang == "fr" else f'{l["name"]}: {l["level"]}', "dots": _dots(l["level"])}
+                              detail=(framing and e.get(f"detail_{framing}_{lang}")) or field(e, "detail", lang)))
+    languages = [{"text": l.get(lang) or f'{l["name"]}: {l["level"]}', "dots": _dots(l["level"])}
                  for l in p["identity"]["languages"]]
     target = content.get("target") or None
-    projects = [dict(name=x["name"], line=x[f"line_{lang}"], link=x.get("link", ""), link_label=x.get("link_label", ""))
+    projects = [dict(name=x["name"], line=field(x, "line", lang), link=x.get("link", ""), link_label=x.get("link_label", ""))
                 for x in p.get("projects", []) if framing in x.get("families", [])]
     extra = (p.get("certifications_extra") or {}).get(framing, [])
     tiles = (framing in _cv_families(cand, "creative_families") and p.get("highlights_creative")) or p.get("highlights", [])
@@ -176,9 +168,10 @@ def assemble(content: dict, cand: Candidate) -> tuple[dict, str]:
                 skills=content["skills"], experience=experience, education=education, projects=projects,
                 certifications=p["certifications"] + [x for x in extra if x not in p["certifications"]],
                 languages=languages,  # an achievement the projects block already tells is not repeated
-                achievements=[a for a in p[f"achievements_{lang}"] if not any(x["name"] in a for x in projects)],
+                achievements=[a for a in (p.get(f"achievements_{lang}") or p.get("achievements_en") or [])
+                              if not any(x["name"] in a for x in projects)],
                 portfolio=framing in _cv_families(cand, "portfolio_families") and bool(p["identity"].get("portfolio_url")),
-                highlights=[{"html": _bold_lead(h[lang]),
+                highlights=[{"html": _bold_lead(h.get(lang) or h.get("en") or ""),
                              "icon": ICONS.get(h.get("icon") or DEFAULT_ICONS[min(i, 3)], ICONS["star"])}
                             for i, h in enumerate(tiles)], target=target), lang
 
@@ -195,8 +188,7 @@ def html_for(content: dict, cand: Candidate, scale: float = 1.0, plain: bool = F
 def letter_html(letter: str, job: dict, headline: str, cand: Candidate, lang: str, scale: float = 1.0,
                 color: str | None = None, framing: str = "") -> str:
     today = date.today()
-    when = (f"{cand.profile['identity']['location'].split(',')[0]}, le {today.day} {MONTHS_FR[today.month - 1]} {today.year}"
-            if lang == "fr" else f"{cand.profile['identity']['location'].split(',')[0]}, {today:%B} {today.day}, {today.year}")
+    when = date_line(cand.profile['identity']['location'].split(',')[0], lang, today)
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", letter.strip()) if p.strip()]
     return _env.get_template("letter.html.j2").render(
         p=cand.profile["identity"], L=LABELS[lang], lang=lang, scale=scale, fonts=FONTS, photo="", plain=False,

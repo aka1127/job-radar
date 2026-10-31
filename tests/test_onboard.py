@@ -24,7 +24,11 @@ class FakeClaude:
         return self.answers.pop(0)
 
 
-def files(tmp_path, answers="home: Lyon\ntargets: sports marketing\npriority_sector: sport\n"):
+ANSWERS = ("country: France\nhome: Lyon\ntargets: sports marketing\npriority_sector: sport\ncontracts: permanent\n"
+           "languages: French native, English C1\n")
+
+
+def files(tmp_path, answers=ANSWERS):
     cv, ans = tmp_path / "cv.txt", tmp_path / "answers.yaml"
     cv.write_text(CV, encoding="utf-8")
     ans.write_text(answers, encoding="utf-8")
@@ -43,6 +47,7 @@ def test_a_cv_becomes_a_checked_candidate_folder(tmp_path, monkeypatch):
     assert "onboarding_questions" not in profile and "Pickup Diaries" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")
     first, second = fake.prompts[0][1], fake.prompts[1][1]
     assert "never its facts" in first and "Velora Mobility" in first and "priority_sector: sport" in first
+    assert "country_code: FR" in first and "any field" in first and config["country"] == "FR"
     assert "Courtside" in second and fake.prompts[0][0] == "onboard"  # the profile feeds the settings
 
 
@@ -84,3 +89,35 @@ def test_word_and_short_cvs(tmp_path):
     (tmp_path / "scan.txt").write_text("too short", encoding="utf-8")
     with pytest.raises(SystemExit, match="scanned PDF"):
         onboard.cv_text(tmp_path / "scan.txt")
+
+
+def test_the_interview_asks_the_country_first_and_follows_up_on_the_cv(tmp_path, monkeypatch):
+    """No answers file: the questions are asked in the terminal, an unknown country is asked again, and Claude's
+    follow-up questions about the CV are asked too, then folded into the profile."""
+    profile = (EXAMPLE_PROFILE + "\nonboarding_questions:\n  - How many players watch Pickup Diaries?\n"
+               "  - Your MSc dates?\n")
+    fake = FakeClaude([profile, EXAMPLE_PROFILE, EXAMPLE_CONFIG])
+    monkeypatch.setattr("hunter.llm.ClaudeCode", fake)
+    monkeypatch.setattr(onboard, "_interactive", lambda: True)
+    by_key = {"country": ["Atlantis", "Deutschland"], "home": ["Berlin"], "targets": ["data analyst"],
+              "contracts": ["permanent"], "languages": ["German native, English C1"]}
+    script = [a for key, *_ in onboard.QUESTIONS for a in by_key.get(key, [""])]
+    typed = iter(script + ["about 3,000 a week", ""])  # follow-ups: one answered, one skipped
+    asked = []
+    monkeypatch.setattr("builtins.input", lambda prompt="": asked.append(prompt) or next(typed))
+    cv, _ = files(tmp_path)
+    folder = onboard.onboard("lena", cv, None, root=tmp_path / "candidates")
+    assert asked[0].startswith("Which country") and asked[1].startswith("Which country")  # Atlantis: asked again
+    assert "country_code: DE" in fake.prompts[0][1] and "Berlin" in fake.prompts[0][1]
+    update = fake.prompts[1][1]
+    assert "Q: How many players watch Pickup Diaries?" in update and "A: about 3,000 a week" in update
+    assert "Your MSc dates?" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")  # skipped: kept for later
+    assert yaml.safe_load((folder / "config.yaml").read_text(encoding="utf-8"))["country"] == "DE"
+
+
+def test_settings_must_use_known_countries_languages_and_contracts():
+    c = yaml.safe_load(EXAMPLE_CONFIG)
+    assert onboard.check_config(c) == []
+    bad = c | {"country": "Atlantis", "cv_languages": ["en", "xx"], "contracts": ["CDI", "zero-hour"]}
+    problems = "; ".join(onboard.check_config(bad))
+    assert "ISO country code" in problems and "not xx" in problems and "not zero-hour" in problems

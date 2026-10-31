@@ -186,7 +186,7 @@ def age(posted: str) -> str:
 def card(job: dict, fit: dict, res: dict, cfg: dict | None = None) -> str:
     """The job at a glance: what, where, how good, what to do. Short on purpose."""
     e, cfg = html.escape, cfg or {}
-    contract = fit.get("contract") if fit.get("contract") in ("CDI", "CDD") else ""
+    contract = targets.contract_label(fit.get("contract"), cfg)
     where = short_place(job["location"]) + (f" (outside {targets.home_label(cfg)})" if res["tier"] == 2 else "")
     meta = " · ".join(x for x in (where, contract, age(job.get("posted"))) if x)
     p = targets.priority(cfg)  # the candidate's priority sector, marked on top

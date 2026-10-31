@@ -10,7 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from . import alerts, archive, ats, careers, harvest, logos, opendata, sitemaps, sources, targets
+from . import alerts, archive, ats, careers, harvest, i18n, logos, opendata, sitemaps, sources, targets
+from .i18n import LABELS
 from .candidate import ROOT, file_part
 from .llm import Claude, UsageLimit
 from .notify import Telegram, alert, brief_text, deliver, first_line, outreach_text, people_search_url
@@ -21,7 +22,8 @@ from .text import clean_title, detect_lang, display_title, slug
 
 log = logging.getLogger("hunter")
 CV_KEYS = ("headline", "summary", "strengths", "skills", "experience")
-TIERS = {"home_region": 1, "remote_france": 1, "other_france": 2, "paris_region": 1}  # paris_region: older scores
+TIERS = {"home_region": 1, "remote_country": 1, "other_country": 2,
+         "paris_region": 1, "remote_france": 1, "other_france": 2}  # the last three: scores from older versions
 
 
 AI_WORDS = re.compile(r"\b(?:AI|IA|LLMs?|GenAI)\b|intelligence artificielle|artificial intelligence", re.I)
@@ -33,8 +35,9 @@ def _ids(cv: dict) -> list[str]:
 
 
 def tidy_skills(skills: list[dict]) -> list[dict]:
-    """AI stays a supporting skill: a group named after it ("AI & Content", "Outils IA") loses the AI part of its
-    label, or joins the last other group when nothing else is left of the label."""
+    """When the config says cv.ai_supporting_skill (AI is not the candidate's field), AI stays a supporting skill: a
+    group named after it ("AI & Content", "Outils IA") loses the AI part of its label, or joins the last other group
+    when nothing else is left of the label."""
     out = []
     for g in skills:
         label = AI_WORDS.sub("", g["label"]).strip(" &/,-")
@@ -150,12 +153,14 @@ def build(cand, claude: Claude, renderer: Renderer, job: dict, fit: dict, lang: 
     tag = file_tag(job["company"])
     final_pdf = folder / f"{cand.file_stem}-CV-{tag}.pdf"
     alt_pdf = folder / "autre_version" / f"{cand.file_stem}-CV-{tag}.pdf"
-    letter_pdf = folder / f"{cand.file_stem}-{'Lettre' if lang == 'fr' else 'Cover-Letter'}-{tag}.pdf"
+    letter_pdf = folder / f"{cand.file_stem}-{LABELS.get(lang, LABELS['en'])['letter_file']}-{tag}.pdf"
     pdf = folder / ".work" / "cv.pdf"  # draft used by the checks and revisions
 
     frame = targets.framing(fit, cand.config)
     pack = claude.pack(job, fit, lang, frame)
-    pack["skills"] = tidy_skills(pack["skills"])
+    supporting_ai = (cand.config.get("cv") or {}).get("ai_supporting_skill", False)
+    if supporting_ai:
+        pack["skills"] = tidy_skills(pack["skills"])
     for key in ("cover_letter", "linkedin_note", "hiring_manager_message", "follow_up"):
         pack[key] = unbold(pack[key])  # bold markers are for CV lines only
     pack["interview_angles"] = [unbold(a) for a in pack["interview_angles"]]
@@ -180,7 +185,8 @@ def build(cand, claude: Claude, renderer: Renderer, job: dict, fit: dict, lang: 
         cv2 = claude.revise(job, cv, lang, check["missing"], screen, shorter=pages > 2, framing=frame,
                             score=fit["score"]) | {
             "lang": lang, "target": target, "framing": frame}
-        cv2["skills"] = tidy_skills(cv2["skills"])
+        if supporting_ai:
+            cv2["skills"] = tidy_skills(cv2["skills"])
         tmp = folder / ".work" / "candidate.pdf"
         pages2, scale2 = renderer.cv_pdf(cv2, cand, tmp)
         check2 = ats.check(tmp, fit["keywords"], job["title"], lang, cand, job["company"], max_pages=2,
@@ -356,12 +362,12 @@ def watch_usage(cand, store: Store):
         store.put("usage_warned", today["day"])
 
 
-def score_order(job: dict, home: set[str] = frozenset()) -> tuple:
+def score_order(job: dict, near=None) -> tuple:
     """Who is scored first when there are too many: the core targets of the triage, then the candidate's home
-    region (its departments) and remote jobs, then the freshest."""
+    area and remote jobs (near: location -> bool, see targets.near_home), then the freshest."""
     loc = job.get("location") or ""
-    near = archive.department(loc) in home or bool(re.search(r"t[ée]l[ée]travail|remote", loc, re.I))
-    return (job.get("triage") == "core", near, job.get("posted") or "")
+    close = near(loc) if near else bool(re.search(r"t[ée]l[ée]travail|remote", loc, re.I))
+    return (job.get("triage") == "core", close, job.get("posted") or "")
 
 
 def triage(claude: Claude, jobs: list[dict], store: Store, batch: int = 80) -> list[dict]:
@@ -400,12 +406,12 @@ def scores_today() -> int:
     return (today.get("steps") or {}).get("score", 0) if today.get("day") == datetime.now().date().isoformat() else 0
 
 
-def cap_scoring(ready: list[dict], store: Store, limit: int, home: set[str] = frozenset()) -> list[dict]:
+def cap_scoring(ready: list[dict], store: Store, limit: int, near=None) -> list[dict]:
     """At most `limit` Claude scores this run, the candidate's region and the freshest postings first; the rest wait
     as pending for the next runs, so a big catch-up never burns the day's Claude usage in one go."""
     if len(ready) <= limit:
         return ready
-    ready = sorted(ready, key=lambda j: score_order(j, home), reverse=True)
+    ready = sorted(ready, key=lambda j: score_order(j, near), reverse=True)
     for j in ready[limit:]:
         store.save(j, "pending")
     log.info("scoring %d postings now (region and freshest first), %d wait for the next runs", limit,
@@ -461,7 +467,8 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
         if not dry:
             grow_watchlist(cand, store, raw, cands)
         cands += prefilter(careers.poll(store, cfg, title_ok, keep=arch.save if arch else None), title_ok, store)
-    if arch:  # what the background crawlers and the France Travail harvest archived since the last run
+    france = targets.country(cfg) == "FR"  # the national archive feeds (crawled sites, open data) are French
+    if arch and france:  # what the background crawlers and the France Travail harvest archived since the last run
         since = store.get("last_run") or (datetime.now(timezone.utc) - timedelta(
             hours=cfg["scraping"]["first_run_hours"])).isoformat(timespec="seconds")
         harvested = tuple(s["name"] for s in sitemaps.SITES) + ("France Travail", opendata.SOURCE)
@@ -484,7 +491,7 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
     if not dry:
         left_today = max(0, cfg.get("max_scores_per_day", 600) - scores_today())
         ready = cap_scoring(ready, store, min(cfg.get("max_scores_per_run", 250), left_today),
-                            targets.home_departments(cfg))
+                            targets.near_home(cfg))
     log.info("%d new postings pass the filters, %d scored this run", len(cands), len(ready))
     if dry:
         for j in ready:
@@ -510,11 +517,11 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
                 j["score_tries"] = int(j.get("score_tries") or 0) + 1  # a posting that always fails stops at 3
             store.save(j, "pending" if int(j.get("score_tries") or 0) < 3 else "failed")
             continue
-        lang = detect_lang(j["description"]) or fit["language"]
+        lang = i18n.output_language(detect_lang(j["description"]) or fit["language"], targets.cv_languages(cfg))
         tier = TIERS.get(fit["location_type"])
         bar = targets.bar_for(fit, cfg)
         keep = (tier and fit["score"] >= bar[tier] and not fit["dealbreakers"]
-                and fit["contract"] in cfg.get("contracts", ["CDI", "CDD", "unknown"]))
+                and targets.contract_ok(fit["contract"], cfg))
         store.save(j, "queued" if keep else "skipped", fit["score"], tier, {"fit": fit, "lang": lang})
     if boards:  # only now that every posting found is saved: a run cut short searches the same hours again
         for b in windows:
@@ -562,7 +569,7 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
             raise
         except Exception as e:
             log.warning("career page discovery failed: %s", e)
-    if arch:
+    if arch and france:
         try:  # all offers published in France since the last harvest (needs access to Offres d'emploi v2)
             harvest.harvest_due(arch)
         except UsageLimit:
@@ -611,7 +618,7 @@ def apply_to(cand, url: str) -> str:
     if not job:
         return "Could not read a job posting at that link."
     fit = claude.score(job)
-    lang = detect_lang(job["description"]) or fit["language"]
+    lang = i18n.output_language(detect_lang(job["description"]) or fit["language"], targets.cv_languages(cand.config))
     with Renderer() as renderer:
         ship(cand, store, claude, renderer, job, fit, lang, TIERS.get(fit["location_type"]))
     write_dashboard(cand, store)

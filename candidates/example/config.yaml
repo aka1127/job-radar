@@ -2,9 +2,11 @@
 # Overrides ../../config.yaml. Copy this folder to candidates/<name>/ and adapt, or run
 # `python -m hunter onboard <name> --cv your-cv.pdf` to have it written from a CV.
 
+country: FR                # ISO code of the country to search in (DE, ES, GB, US, MA...)
 home: "Lyon, Auvergne-Rhône-Alpes"
 home_label: Lyon
-home_departments: ["69"]   # tier 1 with remote jobs, scored first
+home_radius_km: 40         # cities this close to Lyon are the home area: tier 1 with remote jobs, scored first
+cv_languages: [en, fr]     # CVs and letters in English or French; postings in other languages get English
 
 # Used by the scorer and the triage: what counts as a core target, and at which level.
 level_note: >
@@ -22,7 +24,7 @@ locations:
   - {query: "Lyon, France", tier: 1}
   - {query: "France", tier: 2}
 min_score: {1: 55, 2: 65}
-contracts: [CDI, CDD, unknown]
+contracts: [permanent, fixed_term, unknown]   # in France: CDI, CDD
 dealbreakers: [internship or apprenticeship, a language the candidate lacks required at native level,
                far more years than the candidate has, an engineering role, a job abroad]
 
@@ -103,6 +105,7 @@ brief_snapshot: "3 observations you actually verified about their marketing (sit
 cv:
   creative_families: [sport, content_social]
   portfolio_families: [sport, content_social, event]
+  ai_supporting_skill: true   # AI is not this person's field: never a skills group of its own
 
 # Every term runs on every board and location. The first 12 also steer the daily web search for career pages.
 searches:

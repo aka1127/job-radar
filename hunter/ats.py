@@ -5,12 +5,9 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+from .i18n import LABELS, field
 from .text import clean_title, fold, local_dates
 
-SECTIONS = {
-    "en": ["profile", "key skills", "professional experience", "education"],
-    "fr": ["profil", "competences cles", "experience professionnelle", "formation"],
-}
 BAD_GLYPHS = re.compile("[ﬀ-ﬆ�-]")
 YEARS = re.compile(r"\b(19|20)\d\d\b")
 
@@ -69,7 +66,8 @@ def check(pdf: Path, keywords: list[str], posting_title: str, lang: str, cand, c
 
     # Parsing: sections in the standard order, contact details, every job with its title and dates.
     lines = [fold(l).strip() for l in raw.splitlines()]
-    positions = [lines.index(s) if s in lines else -1 for s in (fold(x).strip() for x in SECTIONS[lang])]
+    titles = [LABELS.get(lang, LABELS["en"])[k] for k in ("profile", "skills", "experience", "education")]
+    positions = [lines.index(s) if s in lines else -1 for s in (fold(x).strip() for x in titles)]
     sections_ok = all(p >= 0 for p in positions) and positions == sorted(positions)
     if not sections_ok:
         issues.append("standard sections missing or out of order in the extracted text")
@@ -80,8 +78,8 @@ def check(pdf: Path, keywords: list[str], posting_title: str, lang: str, cand, c
         issues.append("contact block not fully readable (name, email, phone, city)")
     # The plain CV puts "(alternance)" on its own line, so the title only has to match without it.
     jobs = [e for e in cand.profile["experience"] if ids is None or e["id"] in ids]  # the jobs this CV shows
-    jobs_ok = [any(has(t, re.sub(r"\s*\([^()]*\)\s*$", "", e[k])) for k in (f"title_{lang}", f"title_alt_{lang}") if e.get(k))
-               and has(t, e.get(f"company_{lang}") or e["company"])
+    jobs_ok = [any(has(t, re.sub(r"\s*\([^()]*\)\s*$", "", v)) for v in (field(e, "title", lang), field(e, "title_alt", lang)) if v)
+               and has(t, field(e, "company", lang))
                and re.search(r"\d{4}", local_dates(e, lang)).group(0) in raw for e in jobs] or [True]
     if not all(jobs_ok):
         issues.append("some job titles, companies or dates did not parse")
@@ -122,7 +120,19 @@ TOOLS = ["HubSpot", "Salesforce", "Marketo", "Pardot", "SFMC", "Adobe Campaign",
          "Matomo", "AT Internet", "Google Tag Manager", "Google Analytics", "GA4", "Search Console", "Meta Ads",
          "Google Ads", "Microsoft Ads", "Amazon Ads", "Adobe Analytics", "Typeform", "Unbounce", "Wix", "Drupal",
          "Contentful", "Sitecore", "Photoshop", "Illustrator", "Premiere Pro", "After Effects", "InDesign", "CapCut",
-         "Midjourney", "ChatGPT", "Gemini", "Perplexity", "Copilot", "Excel", "PowerPoint", "Tableau"]
+         "Midjourney", "ChatGPT", "Gemini", "Perplexity", "Copilot", "Excel", "PowerPoint", "Tableau",
+         # software and data
+         "Java", "JavaScript", "TypeScript", "React", "Angular", "Vue.js", "Node.js", "Django", "Flask", "Spring",
+         "Kotlin", "Swift", "C#", ".NET", "PHP", "Ruby", "Rust", "Scala", "Docker", "Kubernetes", "Terraform",
+         "Ansible", "AWS", "Azure", "GCP", "Jenkins", "GitLab", "GitHub Actions", "PostgreSQL", "MySQL", "MongoDB",
+         "Redis", "Elasticsearch", "Kafka", "Spark", "Hadoop", "Snowflake", "dbt", "Airflow", "Databricks",
+         "TensorFlow", "PyTorch", "scikit-learn", "Pandas", "SAS", "SPSS", "Stata", "Qlik", "MATLAB", "Simulink",
+         "LabVIEW", "ANSYS",
+         # design, engineering, finance, HR, operations
+         "Sketch", "Adobe XD", "Blender", "AutoCAD", "Revit", "SolidWorks", "CATIA", "SketchUp", "ArchiCAD",
+         "SAP", "Oracle", "NetSuite", "QuickBooks", "Sage", "Cegid", "Bloomberg", "Murex", "VBA", "Workday",
+         "BambooHR", "SuccessFactors", "Lucca", "MS Project", "Confluence", "ClickUp", "Smartsheet", "Freshdesk",
+         "ServiceNow", "Gong", "Outreach", "Apollo", "Epic", "Cerner"]
 
 
 def unbacked_tools(cv_text: str, cand) -> list[str]:

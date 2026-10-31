@@ -10,7 +10,7 @@ def _stub(monkeypatch, cand, capped_term="marketing digital", block_after=None):
     cand.config["scraping"]["pause_between_searches_s"] = [0, 0]
     calls = []
 
-    def listing(site, term, location, hours, n):
+    def listing(site, term, location, hours, n, country="FR"):
         calls.append((site, term, location, hours))
         if block_after and len(calls) > block_after:
             sources.WATCH.blocked.add(site)
@@ -155,7 +155,7 @@ def test_boards_are_searched_side_by_side(monkeypatch, cand):
     together = threading.Barrier(4, timeout=5)  # only passes if the 4 boards are being searched at the same time
     started = set()
 
-    def listing(site, term, location, hours, n):
+    def listing(site, term, location, hours, n, country="FR"):
         if site not in started:
             started.add(site)
             together.wait()
@@ -197,5 +197,6 @@ def test_home_region_postings_are_scored_first(cand):
     paris = sources.job(id="x:paris", title="Chef de projet", company="B", location="Paris 09 - 75", posted="2026-10-20")
     remote = sources.job(id="x:remote", title="Chef de projet", company="C", location="Télétravail, France",
                          posted="2026-10-25")
-    home = {"75", "77", "78", "91", "92", "93", "94", "95"}  # a Paris-based candidate
-    assert [j["id"] for j in cap_scoring([far, paris, remote], store, 2, home)] == ["x:remote", "x:paris"]
+    from hunter.targets import near_home
+    near = near_home({"country": "FR", "home": "Paris", "home_departments": ["75", "77", "78", "91", "92", "93", "94", "95"]})
+    assert [j["id"] for j in cap_scoring([far, paris, remote], store, 2, near)] == ["x:remote", "x:paris"]

@@ -13,7 +13,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import targets
+from . import geo, i18n, targets
 from .candidate import ROOT
 
 log = logging.getLogger(__name__)
@@ -133,7 +133,8 @@ def _obj(props: dict) -> dict:
 _STR = {"type": "string"}
 _STRS = {"type": "array", "items": _STR}
 
-LOCATION_TYPES = ["home_region", "remote_france", "other_france", "abroad"]
+LOCATION_TYPES = ["home_region", "remote_country", "other_country", "abroad"]
+CONTRACT_TYPES = ["permanent", "fixed_term", "freelance", "interim", "internship_or_apprenticeship", "unknown"]
 DEALBREAKERS = ["internship or apprenticeship", "a language the candidate lacks required at native level",
                 "far more years than the candidate has", "a job abroad"]
 
@@ -143,9 +144,8 @@ def score_schema(cfg: dict) -> dict:
     props = {
         "score": {"type": "integer"},
         "location_type": {"type": "string", "enum": LOCATION_TYPES},
-        "language": {"type": "string", "enum": ["fr", "en"]},
-        "contract": {"type": "string", "enum": ["CDI", "CDD", "freelance", "interim", "internship_or_apprenticeship",
-                                                "unknown"]},
+        "language": {"type": "string"},
+        "contract": {"type": "string", "enum": CONTRACT_TYPES},
         "why_fit": _STRS, "gaps": _STRS, "dealbreakers": _STRS, "keywords": _STRS,
         "family": {"type": "string", "enum": [*(cfg.get("families") or {}), "other"]},
     }
@@ -223,8 +223,7 @@ TRUTH RULES (never break these):
   significant growth"). State what was done; results only when the profile has the number.{extra}
 
 ATS AND AI-SCREENER RULES:
-- Write in the language of the posting: French posting -> everything in French; English posting ->
-  everything in English. The posting language is given in the task.
+- Write in the language the task gives (the posting's language whenever the candidate has CVs in it).
 - The headline starts with the posting's exact job title (cleaned of "(H/F)", "F/H/X", "CDI" and of any
   company-name prefix such as "BETC Fullsix - ") when
   the candidate's experience truthfully fits it, then " | " and 2-3 of the strongest matching specialties.
@@ -285,7 +284,7 @@ class Claude:
 
     def score(self, job: dict) -> dict:
         cfg = self.cand.config
-        home = cfg.get("home", "")
+        home, country = cfg.get("home", ""), geo.country_name(targets.country(cfg))
         families = ", ".join(f"{k} ({v})" for k, v in (cfg.get("families") or {}).items())
         p, priority = targets.priority(cfg), ""
         if p:
@@ -300,18 +299,20 @@ TASK: Score how likely the candidate gets an interview for this posting with a w
 - score 0-100. 80+: strong match on role, level and must-haves. 65-79: credible. Below 50: wrong role,
   wrong level (too junior like an internship, or director level) or missing hard requirements.
   Target level: {cfg.get('level_note', 'as the profile shows')}
-- location_type: home_region (on-site/hybrid in {home or 'the candidate home region'}), remote_france (fully
-  remote, open to people in France), other_france (on-site/hybrid elsewhere in France), abroad (anything else).
-  The candidate lives in {home}; other_france is acceptable but lower priority.
+- location_type: home_region (on-site/hybrid within commuting reach of {home or 'their home'}),
+  remote_country (fully remote, open to people in {country}), other_country (on-site/hybrid elsewhere in
+  {country}), abroad (anything else). other_country is acceptable but lower priority.
 - dealbreakers: hard blockers only ({", ".join(cfg.get("dealbreakers") or DEALBREAKERS)}). Empty if none.
 - keywords: 12-20 search terms a recruiter would type into the ATS for this posting: hard skills, tools,
-  channels and job-title words, 1-3 words each (e.g. "Power BI", "CRM", "gestion de projet", not whole
-  sentences), written as the posting writes them, whether or not the candidate has them.
-- language: the language the posting is written in.
-- why_fit and gaps: 2-3 items each, in English, max 6 words per item (noun phrases, e.g. "CRM automation
-  in HubSpot", "no SFMC experience").
-- contract: CDI, CDD, freelance (freelance, portage, mission), interim (intérim, travail temporaire),
-  internship_or_apprenticeship (stage, alternance), or unknown when the posting does not say.
+  methods and job-title words, 1-3 words each (not whole sentences), written as the posting writes them,
+  whether or not the candidate has them.
+- language: the ISO 639-1 code of the language the posting is written in (en, fr, de, es...).
+- why_fit and gaps: 2-3 items each, in English, max 6 words per item (noun phrases, e.g. "five years of B2B
+  sales", "no Kubernetes in production").
+- contract: permanent (open-ended: CDI in France, unbefristet in Germany, indefinido in Spain...), fixed_term
+  (CDD, befristet, temporal...), freelance (contractor, freelance, portage), interim (temp agency),
+  internship_or_apprenticeship (internship, apprenticeship, stage, alternance, Ausbildung), or unknown when the
+  posting does not say.
 - family: {families + ", " if families else ""}other.{priority}""", score_schema(cfg))
 
     def triage(self, jobs: list[dict]) -> list[str]:
@@ -336,7 +337,8 @@ Return one verdict for every number.""", TRIAGE_SCHEMA)
         return [verdicts.get(n, "possible") for n in range(1, len(jobs) + 1)]
 
     def pack(self, job: dict, fit: dict, lang: str, framing: str = "default") -> dict:
-        language = "French" if lang == "fr" else "English"
+        language = i18n.NAMES.get(lang, "English")
+        country = geo.country_name(targets.country(self.cand.config))
         avail = self.cand.profile["identity"].get("availability") or ""
         availability_clause = (f", and the availability ({avail})" if avail
                                else " (availability is not confirmed: do not mention it)")
@@ -363,8 +365,10 @@ TASK: Build the application pack for this posting.
      "Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées." and the full name.
    - English: 180-230 words, same structure, "Dear Hiring Team," ... "Kind regards," and the full name. Never
      translate the French closing.
-   - Both: AI in one clause at most; years as the profile words them; never "I am writing to apply", "c'est exactement",
-     "je suis convaincu", "passionné", "dynamique", "force de proposition", "perfect fit".
+   - Any other language: 180-250 words, the same structure, with that language's usual salutation and closing
+     for a job application in {country}.
+   - All: AI in one clause at most; years as the profile words them; no clichés ("I am writing to apply",
+     "c'est exactement", "je suis convaincu", "passionné", "dynamique", "force de proposition", "perfect fit").
 3. linkedin_note: max 180 characters (LinkedIn caps invitation notes at 200). French: "Bonjour [Prénom], je viens
    de postuler au poste de <titre> chez <entreprise>. <one proof naming an employer>. Au plaisir d'échanger.
    <first name>". English: "Hi [First name], I just applied for the <title> role at <company>. <one proof>. Happy
@@ -375,13 +379,15 @@ TASK: Build the application pack for this posting.
 5. follow_up: max 60 words, sent one week later. French: "Bonjour [Prénom], je me permets de revenir vers vous au
    sujet de ma candidature au poste de <titre>, envoyée la semaine dernière. <one new, specific point>. Je reste
    disponible pour un échange. Bien cordialement, <full name>". English equivalent, "Best regards,".
+   Other languages: the same messages in that language's usual professional style.
 6. hiring_manager_titles: 2-3 job titles of the person who likely manages this role, in the posting language.
 7. interview_angles: 3 talking points linking real experience to this company's needs.""", schema)
 
     def screen(self, job: dict, cv_text: str) -> dict:
         """Independent recruiter-side screener: sees only the posting and the parsed CV, like a real one."""
+        country = geo.country_name(targets.country(self.cand.config))
         return self.cc.run("screen", f"""You are the AI resume screener used by a company's recruiting team in
-France. You compare a parsed CV with a job posting and decide who advances to a recruiter call. Be strict
+{country}. You compare a parsed CV with a job posting and decide who advances to a recruiter call. Be strict
 and concrete. Judge only what the CV text shows.
 
 {_job_block(job)}
@@ -395,7 +401,7 @@ candidate, so never suggest adding experience). Write the lists in English.""", 
 
     def revise(self, job: dict, cv: dict, lang: str, missing: list[str], screen: dict | None, shorter: bool,
                framing: str = "default", score: int | None = None) -> dict:
-        language = "French" if lang == "fr" else "English"
+        language = i18n.NAMES.get(lang, "English")
         return self.cc.run("revise", f"""{self.rules}
 
 {_job_block(job)}
@@ -413,7 +419,7 @@ the same way. Same truth rules.
 {_length(self.ids, shorter, self.cand.config)}""", _obj(cv_props(self.ids)))
 
     def brief(self, job: dict, lang: str) -> dict:
-        language = "French" if lang == "fr" else "English"
+        language = i18n.NAMES.get(lang, "English")
         return self.cc.run("brief", f"""Research this company on the web: its own site first, then recent news.
 Company: {job['company']}
 Role the candidate applies to: {job['title']} ({job['location']})
@@ -449,16 +455,18 @@ profile, requirements, benefits) in the posting's original language. found=false
 job posting or cannot be read.""", EXTRACT_SCHEMA, tools=("WebFetch",))
 
     def discover(self, roles: list[str], already: list[str]) -> list[dict]:
-        """Find career pages of companies hiring in France for these roles, beyond the big job boards."""
-        out = self.cc.run("discover", f"""Find companies currently hiring in France for roles like:
+        """Find career pages of companies hiring in the candidate's country for these roles, beyond job boards."""
+        cfg = self.cand.config
+        country = geo.country_name(targets.country(cfg))
+        out = self.cc.run("discover", f"""Find companies currently hiring in {country} for roles like:
 {", ".join(roles)}.
 
 Look for postings on company career sites and ATS job boards, NOT on LinkedIn, Indeed, HelloWork,
 Welcome to the Jungle or other job boards. Useful searches include:
 site:jobs.lever.co, site:job-boards.greenhouse.io, site:jobs.ashbyhq.com, site:apply.workable.com,
 site:jobs.smartrecruiters.com, site:teamtailor.com, site:recruitee.com, site:jobs.personio.de,
-plus French queries like "recrutement {(roles or ["marketing"])[0]} CDI {targets.home_label(self.cand.config)}" on company
-"carrières" pages. Prefer the {self.cand.config.get("home") or "candidate's"} area and remote France; other French cities
+plus queries in the local language like "{(roles or ["jobs"])[0]} {targets.home_label(cfg)}" on company careers
+pages. Prefer the {cfg.get("home") or "candidate's"} area and remote jobs in {country}; other cities of {country}
 are fine too.
 
 Skip these companies, they are already watched: {", ".join(already[:300]) or "none"}.
