@@ -1,0 +1,9 @@
+# Answers for `python -m hunter onboard <name> --cv cv.pdf --answers answers.yaml`.
+# Without --answers, the same questions are asked in the terminal. Plain words are fine.
+home: "Lyon"                                   # where you live (city or region)
+targets: "sports marketing, digital marketing, project manager, partnerships"   # the jobs you want
+priority_sector: "sport"                       # one sector you want first; leave empty for none
+contracts: "CDI, CDD"                          # CDI, CDD, freelance, internship...
+avoid: "call centres, field sales"             # jobs or fields to avoid
+availability: "within a month"
+notes: "open to Paris and remote"              # mobility, remote, salary, anything else

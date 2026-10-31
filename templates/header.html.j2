@@ -1,0 +1,14 @@
+<header class="hero">
+  <div class="id">
+    {% set name_parts = p.name.split(" ", 1) %}<h1><span class="fn">{{ name_parts[0] }}</span>{% if name_parts | length > 1 %} {{ name_parts[1] }}{% endif %}</h1>
+    <div class="headline">{{ headline }}</div>
+    <div class="contact{{ ' five' if show_portfolio and p.portfolio_url else '' }}">
+      <span>{% if not plain %}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3.6 1.6h2.1l1 3-1.5 1a8.5 8.5 0 0 0 4.2 4.2l1-1.5 3 1v2.1a1.6 1.6 0 0 1-1.7 1.6A12.4 12.4 0 0 1 2 3.3a1.6 1.6 0 0 1 1.6-1.7z"/></svg>{% endif %}<a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a></span>
+      <span>{% if not plain %}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.6" y="3" width="12.8" height="10" rx="2"/><path d="M2.2 4.4 8 8.8l5.8-4.4"/></svg>{% endif %}<a href="mailto:{{ p.email }}">{{ p.email }}</a></span>
+      <span>{% if not plain %}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 14.8s5-4.5 5-8.4a5 5 0 0 0-10 0c0 3.9 5 8.4 5 8.4z"/><circle cx="8" cy="6.4" r="1.7"/></svg>{% endif %}{{ p.location }}</span>
+      <span>{% if not plain %}<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="2.6" fill="currentColor"/><rect x="4.2" y="6.6" width="1.8" height="5.3" fill="#fff"/><circle cx="5.1" cy="4.6" r="1.05" fill="#fff"/><path fill="#fff" d="M7.6 6.6h1.7v.8c.3-.5 1-1 2-1 1.6 0 2.1 1 2.1 2.6v2.9h-1.8V9.3c0-.8-.2-1.3-.9-1.3s-1.2.5-1.2 1.4v2.5H7.6z"/></svg>{% endif %}{% if p.linkedin_url %}<a href="{{ p.linkedin_url }}">{{ p.linkedin_label }}</a>{% else %}{{ p.linkedin_label }}{% endif %}</span>
+      {% if show_portfolio and p.portfolio_url %}<span>{% if not plain %}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.3"/><path d="M1.8 8h12.4M8 1.7c1.8 1.8 2.6 3.9 2.6 6.3S9.8 12.5 8 14.3C6.2 12.5 5.4 10.4 5.4 8S6.2 3.5 8 1.7z"/></svg>{% endif %}<a href="{{ p.portfolio_url }}">{{ p.portfolio_label or p.portfolio_url }}</a></span>{% endif %}
+    </div>
+  </div>
+  {% if photo and not plain %}<img class="photo" src="{{ photo }}" alt="">{% endif %}
+</header>

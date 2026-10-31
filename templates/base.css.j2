@@ -1,0 +1,38 @@
+{# Shared look for the CV and the cover letter. ATS rules: one reading order, real text, standard
+   headings, dark text on light backgrounds, images only for logos/photo/icons. #}
+{{ fonts }}
+@page { size: A4; margin: 10mm 0 8mm; }
+@page :first { margin-top: 0; }  /* page 1 opens with the header band, later pages with a margin */
+:root {
+  --s: {{ scale }};
+  --ink: #121a2b; --muted: #5a6478; --accent: {{ theme.accent }}; --accent-ink: {{ theme.accent_ink }};
+  --soft: {{ theme.soft }}; --line: #e1e6ef;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: "Inter", "Segoe UI", Arial, sans-serif; color: var(--ink);
+       font-size: calc(9pt * var(--s)); line-height: 1.42;
+       font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+.page { padding: calc(11mm * var(--s)) calc(12.5mm * var(--s)) 0; }
+
+.hero { display: flex; align-items: center; gap: 14px; background: var(--soft);
+        border-left: 4px solid var(--accent); border-radius: 10px;
+        padding: calc(11px * var(--s)) calc(14px * var(--s)); }
+.hero .id { flex: 1; min-width: 0; }
+h1 { font-size: calc(23pt * var(--s)); font-weight: 800; letter-spacing: -0.3px; line-height: 1.1; }
+.headline { color: var(--accent); font-size: calc(10.6pt * var(--s)); font-weight: 650; margin-top: 3px; }
+.contact { color: var(--muted); font-size: calc(8.4pt * var(--s)); margin-top: 6px;
+           display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.contact.five { column-gap: 9px; }  /* room for the portfolio link on the same line */
+.contact span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.contact svg { width: 11px; height: 11px; color: var(--accent); flex: none; }
+.contact a { color: inherit; text-decoration: none; }
+.photo { width: calc(80px * var(--s)); height: calc(80px * var(--s)); border-radius: 50%;
+         object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--line); flex: none; }
+
+h2 { display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: calc(8.9pt * var(--s));
+     font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-kerning: none;
+     margin: calc(11px * var(--s)) 0 calc(5px * var(--s)); }
+h2::before { content: ""; flex: none; width: 12px; height: 3px; border-radius: 2px; background: var(--accent); }
+h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+{% if not plain %}.fn { color: var(--accent); }{% endif %}

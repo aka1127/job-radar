@@ -1,0 +1,130 @@
+# Example candidate (fictional): Alex Moreau, Lyon, digital marketing with a priority on the sports industry.
+# Overrides ../../config.yaml. Copy this folder to candidates/<name>/ and adapt, or run
+# `python -m hunter onboard <name> --cv your-cv.pdf` to have it written from a CV.
+
+home: "Lyon, Auvergne-Rhône-Alpes"
+home_label: Lyon
+home_departments: ["69"]   # tier 1 with remote jobs, scored first
+
+# Used by the scorer and the triage: what counts as a core target, and at which level.
+level_note: >
+  First priority: the sports industry (clubs, leagues, federations, sports brands, sports media, sports events):
+  sports marketing, partnerships and sponsorship, fan engagement, sports content. Score entry-to-mid sports roles
+  generously when they fit Courtside and digital marketing. Other core targets, individual-contributor level:
+  chargé(e) de marketing digital, chef de projet marketing digital, chef de projet (digital, communication,
+  events), growth or acquisition marketing, CRM / marketing automation, content or social media manager,
+  partnerships or account manager. Manager, Head of or Responsable titles are stretch roles: score them 75+ only
+  when the scope matches the experience, otherwise below 60. Call-centre, retail, field-sales and IT or
+  construction project roles are below 40.
+
+# Tier 1: the home region or remote in France. Tier 2: elsewhere in France, lower priority and a higher bar.
+locations:
+  - {query: "Lyon, France", tier: 1}
+  - {query: "France", tier: 2}
+min_score: {1: 55, 2: 65}
+contracts: [CDI, CDD, unknown]
+dealbreakers: [internship or apprenticeship, a language the candidate lacks required at native level,
+               far more years than the candidate has, an engineering role, a job abroad]
+
+# Job families the scorer sorts postings into; each one angles the CV its own way (framing_notes).
+families:
+  sport: "the job's core is sport: sports marketing, club or league partnerships, sponsorship, fan engagement, sports content or sports events"
+  content_social: "content, social media, community, video, editorial"
+  project_management: "project or programme manager, coordination, PMO"
+  event: "events, tournaments, trade shows, event production"
+  partnerships: "partnerships, account management, business development, sponsorship sales, customer success"
+  digital_marketing: "any other marketing or communication role"
+default_family: digital_marketing
+
+# The priority sector: its jobs get their own look in Telegram, go first, and sport roles get a lower bar.
+priority:
+  family: sport
+  label: SPORTS INDUSTRY
+  tag: SPORT
+  emoji: "🏀🟠"
+  icon: star
+  min_score: {1: 45, 2: 55}
+  sector: >-
+    the employer works in sport (club, league, federation, sports brand or retailer, sports media, sports
+    events or sports tech), whatever the role
+  note: >-
+    Sport is the candidate's first priority. For priority_sector postings, count Courtside (the basketball media,
+    its audience, its guests and its brand partnerships) as relevant experience, and do not mark the lack of club
+    experience as a gap for entry or mid-level roles.
+
+framing_notes:
+  sport: >-
+    Sports employer, the candidate's first priority. Courtside first with 4-6 bullets: the audience numbers,
+    Courtside Talks and its guests, Pickup Diaries, game coverage, the brand partnerships. One skills group for
+    sport (sports content, partnerships, fan engagement...). The letter gives the Courtside link as a plain URL.
+  content_social: >-
+    Content / social media role. Courtside first with 3-4 bullets: audience numbers and the content produced end
+    to end. Then agency social media (Pixelfox Studio), social content at Velora Mobility, the video testimonials
+    at Atlantica Business School.
+  project_management: >-
+    Project management role. Frame every job around scoping, planning, coordination, delivery and reporting.
+    Portside Logistics may use alt_title (Project Manager, Digital Strategy). Courtside: 2 bullets on running the
+    weekly production.
+  event: >-
+    Event role. Lead with event organisation: the student sports association (tournaments, a charity run), the
+    trade show at Portside Logistics, the webinars at Atlantica. Courtside: 2 bullets (game coverage, guest
+    coordination).
+  partnerships: >-
+    Partnerships / account role. Callwave gets 2 bullets (sales, upselling, client follow-up in Salesforce); then
+    partner outreach at Portside Logistics, the restaurant referral programme at Bocado, company partnerships at
+    Atlantica. Courtside: 2 bullets (brand partnerships, guest outreach).
+  digital_marketing: >-
+    Marketing role. Lead with the 5+ years of experience in digital marketing. Courtside: 2 bullets, with one
+    audience number.
+
+# Extra writing rules for this field, added to the truth rules of every prompt.
+writing_rules:
+  - >-
+    Marketing practices overlap: describe a real activity with the posting's vocabulary (e.g. "SEA" or
+    "acquisition payante" for Google Ads work). Email automation covers "scénarios automatisés", "parcours
+    clients", "segmentation" and "nurturing"; KPI dashboards and reporting cover "suivi des performances".
+  - >-
+    AI is a supporting skill: once in the whole CV at most when the posting does not ask for it, never a skills
+    group named after AI, never "AI agents" or "AI strategy".
+neutral_title: {en: Digital marketer, fr: Marketeur digital}
+
+# The quick title sort before scoring (triage).
+triage:
+  possible: >-
+    a marketing, communication, CRM, content, project, event, partnership or sales role with a vague or mixed
+    title, or a Manager, Head of, Lead or Responsable title in those fields (the full review weighs the level)
+  skip: >-
+    the work itself is engineering, IT, data science, finance, HR, legal, healthcare, teaching, administration,
+    manual, retail or call-centre work; internships, apprenticeships and graduate programmes; director, VP or
+    C-level roles
+brief_snapshot: "3 observations you actually verified about their marketing (site, content/SEO, social, ads)"
+
+# CV parts that depend on the family: the creative tiles and the portfolio link in the header.
+cv:
+  creative_families: [sport, content_social]
+  portfolio_families: [sport, content_social, event]
+
+# Every term runs on every board and location. The first 12 also steer the daily web search for career pages.
+searches:
+  - marketing sport
+  - chef de projet marketing sport
+  - partenariats sport
+  - sponsoring
+  - fan engagement
+  - sports marketing
+  - chef de projet digital
+  - marketing digital
+  - social media manager
+  - content manager
+  - growth marketing
+  - chef de projet événementiel
+  - chef de projet marketing
+  - community manager
+  - account manager
+  - responsable partenariats
+  - CRM marketing
+  - chargé d'acquisition
+
+# Cheap filter on the job title before any AI call (case-insensitive regex).
+title_must_match: 'market(?!s?\b)|growth|crm|\bseo\b|\bsea\b|acquisition|social media|réseaux sociaux|community|content|contenu|brand|marque|digital|numérique|web ?marketing|traffic|trafic|lead gen|automation|e-?mail|emailing|newsletter|campaign|campagne|communication|admission|recrutement (international|étudiant)|paid media|\bpaid\b|\bsma\b|performance marketing|data marketing|e-?commerce|\bm[ée]dias?\b|copywrit|tracking|sport|sponsor|fan engagement|\bfans?\b|\bclub\b|ligue|league|f[ée]d[ée]ration|basket|football|rugby|podcast|festival|tourn(oi|ament)|\bprojets?\b|\bprojects?\b|[ée]v[ée]nement|\bevents?\b|account (manager|executive)|business develop|d[ée]veloppement commercial|commercial|\bsales\b|partenariat|partenaires?|partnership|customer success|vid[ée]o|[ée]ditorial'
+title_must_not_match: 'stage|student|technical account|freelance|int[eé]rim|portage|stagiaire|\binterns?\b|internship|alternan|apprenti|working student|\bvie\b|v\.i\.e|director|directeur|directrice|\bvp\b|vice.president|chief|\bcmo\b|(?<!community )(?<!business )developer|d[ée]veloppeur(?! commercial)|engineer|ingénieur|programmer|scientist|designer|\bqa\b|tech(nical)? lead|product manager|product owner|key account|customer support|support|talent (acquisition|partner|sourc)|recruit|recrut(?!ement (international|étudiant))|\brh\b|juriste|legal|counsel|comptab|financial (analyst|controller)|contr[ôo]leu?r de gestion|controller|achat|acheteur|logisti|supply|caissier|vendeu|technicien|professeur|enseignant|formateur|procurement|\bpeople\b|digital workplace|transformation digitale|digital transformation|\bmoa\b|\bamoa\b|\bsi\b|syst[èe]mes? d.information|informatique|infrastructure|r[ée]seaux? (?!sociaux)|t[ée]l[ée]com|\bbtp\b|travaux|chantier|b[aâ]timent|g[ée]nie|[ée]lectri|m[ée]cani|industri|\berp\b|\bsap\b|cyber|devops|scrum|immobili|t[ée]l[ée]conseil|t[ée]l[ée]vente|call ?cent|technico|itin[ée]rant|terrain|magasin|conduite d.op[ée]rations|ma[îi]trise d.(ouvrage|oeuvre)|pr[ée]venteur'

@@ -1,0 +1,124 @@
+{
+  "headline": "Responsable Marketing B2B | SEO/SEA, marketing automation & génération de leads",
+  "summary": "Marketeur digital avec +5 ans d'expérience dans 3 pays, en B2B et en B2C : acquisition payante (Google Ads, Meta Ads), SEO, tests A/B et automatisation CRM, avec un pilotage de projets de bout en bout.",
+  "strengths": [
+    "**Pilotage de projets de bout en bout** : cadrage, suivi des KPI et reporting Power BI chez Velora Mobility",
+    "**Acquisition payante et tests** : campagnes Google Ads et Meta Ads, tests A/B sur l'emailing chez Bocado",
+    "**Coordination des parties prenantes** : lancement de la plateforme avec les équipes métier, design et développement chez Portside Logistics"
+  ],
+  "skills": [
+    {
+      "label": "Acquisition digitale",
+      "items": [
+        "SEO",
+        "SEM",
+        "Google Ads",
+        "Meta Ads Manager",
+        "Facebook Ads",
+        "Instagram Ads",
+        "Génération de leads",
+        "Landing pages"
+      ]
+    },
+    {
+      "label": "Automation & CRM",
+      "items": [
+        "HubSpot",
+        "Brevo",
+        "Zapier",
+        "Lead nurturing",
+        "Lead scoring",
+        "Email marketing",
+        "Salesforce (utilisateur)",
+        "Marketing automation"
+      ]
+    },
+    {
+      "label": "Analyse & reporting",
+      "items": [
+        "GA4",
+        "Google Tag Manager",
+        "Power BI",
+        "Looker Studio (Data Studio)",
+        "Excel",
+        "Tableaux de bord",
+        "Analyse concurrentielle",
+        "Suivi des KPI"
+      ]
+    },
+    {
+      "label": "Contenu & social",
+      "items": [
+        "Stratégie de contenu",
+        "Copywriting",
+        "Contenu LinkedIn",
+        "Stratégie social media",
+        "Webflow",
+        "WordPress",
+        "Canva"
+      ]
+    },
+    {
+      "label": "Pilotage & marque",
+      "items": [
+        "Cadrage de projet",
+        "Coordination transverse",
+        "Reporting",
+        "Brand book",
+        "Supports événementiels",
+        "Notion",
+        "Asana"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "id": "velora",
+      "bullets": [
+        "Pilotage de **projets marketing digital de bout en bout**, du cadrage et de la coordination des équipes au suivi des KPI et au reporting.",
+        "Conception de **tableaux de bord Power BI et Excel** pour l'analyse des campagnes, avec le suivi Google Analytics et Google Tag Manager.",
+        "Gestion des **campagnes emailing et du lead scoring dans HubSpot** pour les villes partenaires et les employeurs."
+      ]
+    },
+    {
+      "id": "portside",
+      "bullets": [
+        "Développement de la **notoriété de la marque** : brand book, site Webflow, stratégie de contenu LinkedIn, supports pour les salons.",
+        "Prospection **email et LinkedIn des partenaires** pour obtenir des rendez-vous avec les transporteurs et les clients."
+      ]
+    },
+    {
+      "id": "bocado",
+      "bullets": [
+        "Gestion des **campagnes Google Ads et Meta Ads** pour l'acquisition de clients dans trois villes.",
+        "Mise en place de **tests A/B sur les séquences emailing** automatisées dans Brevo et optimisation des landing pages.",
+        "Pilotage du **SEO des pages villes** avec Semrush et Google Search Console."
+      ]
+    },
+    {
+      "id": "atlantica",
+      "bullets": [
+        "Gestion des **campagnes Facebook Ads et Google Ads** pour la génération de leads auprès des futurs étudiants.",
+        "Animation de **campagnes multicanales** sur les réseaux sociaux, l'emailing et les webinaires, avec le nurturing dans HubSpot."
+      ]
+    },
+    {
+      "id": "pixelfox",
+      "bullets": [
+        "Gestion des **campagnes Facebook et Instagram Ads** et création de contenus photo et vidéo pour des marques locales."
+      ]
+    },
+    {
+      "id": "callwave",
+      "bullets": [
+        "**Suivi client personnalisé** et résolution de problèmes, avec la gestion des interactions dans Salesforce."
+      ]
+    }
+  ],
+  "lang": "fr",
+  "target": {
+    "company": "Northwind",
+    "url": "https://example.com/jobs/responsable-marketing",
+    "color": "#12355b"
+  }
+}

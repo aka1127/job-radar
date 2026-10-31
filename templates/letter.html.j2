@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<title>{{ p.name }} - {{ L.letter }} - {{ company }}</title>
+<meta name="author" content="{{ p.name }}">
+<style>
+{% include "base.css.j2" %}
+body { font-size: calc(10pt * var(--s)); line-height: 1.6; }
+.meta { margin-top: calc(26px * var(--s)); display: flex; justify-content: space-between; color: var(--muted); }
+.to { font-weight: 600; color: var(--ink); }
+.subject { margin: calc(22px * var(--s)) 0 calc(14px * var(--s)); font-weight: 700; }
+.subject span { color: var(--accent); }
+.text p { margin-bottom: calc(11px * var(--s)); text-align: justify; }
+.sign { margin-top: calc(18px * var(--s)); font-weight: 700; }
+</style>
+</head>
+<body><div class="page">
+{% with headline=headline %}{% include "header.html.j2" %}{% endwith %}
+<div class="meta"><div class="to">{{ company }}</div><div>{{ place_date }}</div></div>
+<div class="subject">{{ L.subject }} <span>{{ title }}</span></div>
+<div class="text">{% for para in paragraphs %}<p>{% for line in para.splitlines() %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>{% endfor %}</div>
+</div></body>
+</html>

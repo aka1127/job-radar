@@ -1,0 +1,24 @@
+# Secrets and private settings: never committed
+.env
+.env.*
+!.env.example
+
+# What the engine produces: databases, logs, packs, caches
+data/
+output/
+samples/
+*.log
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# People: only the fictional example is public. Every real person's folder stays on this machine.
+candidates/*
+!candidates/example/
+candidates/example/logos/
+candidates/example/cv/
+
+# Local tools
+.claude/settings.local.json
+.vscode/
+.idea/

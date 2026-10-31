@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<title>{{ p.name }} - CV - {{ c.headline }}</title>
+<meta name="author" content="{{ p.name }}">
+<style>
+{% include "base.css.j2" %}
+li b { font-weight: 650; color: var(--ink); }
+ul { padding-left: 13px; margin-top: 2px; }
+li { margin: calc(1.6px * var(--s)) 0; }
+li::marker { color: var(--accent); }
+.small { font-size: calc(8.5pt * var(--s)); }
+.summary { margin-bottom: calc(3px * var(--s)); }
+.where { color: var(--muted); font-size: calc(8.3pt * var(--s)); }
+.role { font-weight: 700; font-size: calc(9.5pt * var(--s)); }
+.org { font-weight: 600; color: var(--accent-ink); }
+.projects p { margin: calc(1.8px * var(--s)) 0; }
+.projects b { font-weight: 650; color: var(--accent-ink); }
+.projects a { color: var(--accent); }
+{% if not plain %}
+/* Designed version: for recruiters' eyes, still one text column in reading order. */
+.tiles { display: flex; gap: 7px; margin-top: calc(8px * var(--s)); }
+.tile { flex: 1; display: flex; align-items: center; gap: 7px; background: var(--soft); border-radius: 8px;
+        padding: calc(5px * var(--s)) 10px; font-size: calc(8.2pt * var(--s)); color: var(--muted); white-space: nowrap; }
+.tile svg { width: 13px; height: 13px; flex: none; color: var(--accent); }
+.tile b { color: var(--ink); font-weight: 700; }
+.strengths { list-style: none; padding-left: 0; }
+.strengths li { padding-left: 16px; margin: calc(2.4px * var(--s)) 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='{{ theme.soft | replace("#", "%23") }}'/><path d='M4.6 8.4l2.3 2.3 4.5-4.6' fill='none' stroke='{{ theme.accent | replace("#", "%23") }}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat 0 0.15em / 11px 11px; }
+.skills div { display: flex; gap: 8px; margin: calc(2.3px * var(--s)) 0; }
+.skills b { flex: none; width: calc(36mm * var(--s)); font-weight: 650; color: var(--accent-ink); }
+.skills span { flex: 1; }
+/* Timeline line as a background: positioned elements would be written last in the PDF and
+   scramble the reading order that ATS parsers see. */
+.timeline { background: linear-gradient(var(--line), var(--line)) no-repeat;
+            background-size: 1px calc(100% - 22px); background-position: calc(14px * var(--s)) 12px; }
+.item { display: flex; gap: calc(10px * var(--s)); margin-bottom: calc(7px * var(--s)); break-inside: avoid; }
+.logo { flex: none; width: calc(27px * var(--s)); height: calc(27px * var(--s)); border-radius: 7px; background: #fff;
+        border: 1px solid var(--line); padding: 1.5px; object-fit: contain; margin-top: 1px; }
+.body { flex: 1; min-width: 0; }
+.row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.dates { flex: none; white-space: nowrap; font-size: calc(7.9pt * var(--s)); font-weight: 600; color: var(--accent-ink);
+         background: var(--soft); border-radius: 999px; padding: 1px 8px; font-variant-numeric: tabular-nums; }
+.langs span { margin-right: 14px; white-space: nowrap; }
+.dots { display: inline-flex; gap: 2px; margin-left: 5px; vertical-align: middle; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--accent); }
+{% else %}
+/* Plain version for strict corporate portals (Workday, Taleo...): title, company and dates each on their
+   own line, no images, no columns, no parenthesis on title lines, 10pt body. Two pages are fine here. */
+body { font-size: calc(10pt * var(--s)); }
+h2 { break-after: avoid; }
+.hero { background: none; border-left: 0; padding: 0; border-radius: 0; }
+.block { margin-bottom: calc(7px * var(--s)); break-inside: avoid; }
+.block .org { color: var(--ink); }
+.pdates { color: var(--muted); font-size: calc(8.6pt * var(--s)); }
+.skills p { margin: calc(2px * var(--s)) 0; }
+{% endif %}
+</style>
+</head>
+<body><div class="page">
+
+{% with headline=c.headline %}{% include "header.html.j2" %}{% endwith %}
+{% if plain %}<p class="small" style="margin-top:6px">{{ c.highlights | map(attribute="html") | join(" · ") | striptags }}</p>
+{% else %}<div class="tiles">{% for h in c.highlights %}<div class="tile">{{ h.icon | safe }}<span>{{ h.html | safe }}</span></div>{% endfor %}</div>{% endif %}
+
+<h2>{{ L.profile }}</h2>
+<p class="summary">{{ c.summary | bold }}</p>
+{% if c.strengths %}<ul class="strengths">{% for s in c.strengths %}<li>{{ s | bold }}</li>{% endfor %}</ul>{% endif %}
+
+<h2>{{ L.skills }}</h2>
+<div class="skills">
+{% if plain %}{% for g in c.skills %}<p><b>{{ g.label }}:</b> {{ g["items"] | join(", ") }}</p>
+{% endfor %}{% else %}{% for g in c.skills %}<div><b>{{ g.label }}</b><span>{{ g["items"] | join(" · ") }}</span></div>
+{% endfor %}{% endif %}</div>
+
+<h2>{{ L.experience }}</h2>
+{% if plain %}
+{% for j in c.experience %}
+<div class="block">
+  <div class="role">{{ j.title_plain }}</div>
+  <div class="org">{{ j.company }}</div>
+  <div class="pdates">{{ j.dates }}</div>
+  {% if j.note %}<div class="where">{{ j.note }}</div>{% endif %}
+  {% if j.bullets %}<ul>{% for b in j.bullets %}<li>{{ b | bold }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="timeline">
+{% for j in c.experience %}
+<div class="item">
+  <img class="logo" src="{{ j.logo }}" alt="">
+  <div class="body">
+    <div class="row"><div><span class="role">{{ j.title }}</span> <span class="org">· {{ j.company }}</span> <span class="where">· {{ j.location }}{% if j.context %} · {{ j.context }}{% endif %}</span></div>
+    <div class="dates">{{ j.dates }}</div></div>
+    {% if j.bullets %}<ul>{% for b in j.bullets %}<li>{{ b | bold }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if c.projects %}
+<h2>{{ L.projects }}</h2>
+<div class="small projects">{% for x in c.projects %}<p><b>{{ x.name }}</b>{{ " : " if lang == "fr" else ": " }}{{ x.line }}{% if x.link %} <a href="{{ x.link }}">{{ x.link_label or x.link }}</a>{% endif %}</p>
+{% endfor %}{% if c.achievements %}<p>{{ c.achievements | join(" · ") }}</p>{% endif %}</div>
+{% endif %}
+
+<h2>{{ L.education }}</h2>
+{% if plain %}
+{% for e in c.education %}
+<div class="block">
+  <div class="role">{{ e.degree }}</div>
+  <div class="org">{{ e.school }}</div>
+  <div class="pdates">{{ e.dates }}</div>
+  {% if e.detail %}<div class="where">{{ e.detail }}</div>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="timeline">
+{% for e in c.education %}
+<div class="item">
+  <img class="logo" src="{{ e.logo }}" alt="">
+  <div class="body">
+    <div class="row"><div><span class="role">{{ e.degree }}</span> <span class="org">· {{ e.school }}</span> <span class="where">· {{ e.location }}</span></div>
+    <div class="dates">{{ e.dates }}</div></div>
+    {% if e.detail %}<div class="where">{{ e.detail }}</div>{% endif %}
+  </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<h2>{{ L.certifications }}</h2>
+{% if plain %}{% for cert in c.certifications %}<div class="small">{{ cert }}</div>{% endfor %}
+{% else %}<div class="small">{{ c.certifications | join(" · ") }}</div>{% endif %}
+
+<h2>{{ L.languages }}</h2>
+{% if plain %}<div class="small">{{ c.languages | map(attribute="text") | join(" · ") }}</div>
+{% else %}<div class="small langs">{% for l in c.languages %}<span>{{ l.text }}<span class="dots">{% for i in range(5) %}<i class="{{ 'on' if i < l.dots else '' }}"></i>{% endfor %}</span></span>{% endfor %}</div>{% endif %}
+
+{% if not c.projects %}<h2>{{ L.achievements }}</h2>
+<div class="small">{{ c.achievements | join(" · ") }}</div>{% endif %}
+
+</div></body>
+</html>
