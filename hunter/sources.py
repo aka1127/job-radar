@@ -11,6 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
+from . import targets
+
 log = logging.getLogger(__name__)
 BOARDS = ("linkedin", "indeed", "hellowork", "glassdoor")
 # Reposts that name a job board as the employer (Glassdoor carries HelloWork's offers as "Hellowork"): the real
@@ -221,7 +223,7 @@ def _board(site: str, cfg: dict, hours: int) -> tuple[list[dict], int]:
                 return jobs, searches
             if any(loc["query"].endswith(c) for c in complete):
                 continue
-            batch = listing(site, term, loc["query"], hours, sc["results_per_search"], cfg.get("country") or "FR")
+            batch = listing(site, term, loc["query"], hours, sc["results_per_search"], targets.country(cfg))
             searches += 1
             if len(batch) < sc["results_per_search"]:
                 complete.append(loc["query"])
@@ -246,7 +248,7 @@ def collect(cand, hours: dict[str, int]) -> list[dict]:
     The boards run side by side (each keeps its own pace), so adding a board barely lengthens a run."""
     cfg = cand.config
     WATCH.blocked.clear()  # a block lasts one run, also inside the long-running loop
-    code = (cfg.get("country") or "FR").upper()
+    code = targets.country(cfg)
     sites = [s for s in BOARDS if cfg["sources"].get(s) and s in hours and board_works(s, code)]
     work = [(s, lambda s=s: _board(s, cfg, hours[s])) for s in sites]
     if cfg["sources"].get("france_travail") and code == "FR":

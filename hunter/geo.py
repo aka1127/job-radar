@@ -5,21 +5,33 @@ import math
 import re
 from functools import lru_cache
 
+from .i18n import LABELS
 from .text import fold
 
-# Names job postings use for a country that GeoNames does not give as its English name (folded, lowercase).
+# Names job postings and people use for a country that GeoNames does not give as its English name (folded).
 ALIASES = {
     "FR": ["france", "ile de france", "idf", "la defense", "sophia antipolis"],
-    "GB": ["uk", "united kingdom", "great britain", "england", "scotland", "wales", "northern ireland"],
-    "US": ["usa", "united states", "united states of america", "u s a"],
-    "DE": ["deutschland"], "ES": ["espana"], "IT": ["italia"], "NL": ["nederland", "holland", "the netherlands"],
-    "BE": ["belgique", "belgie", "belgien"], "CH": ["suisse", "schweiz", "svizzera"], "AT": ["osterreich"],
-    "PT": [], "IE": ["eire"], "SE": ["sverige"], "DK": ["danmark"], "NO": ["norge"], "FI": ["suomi"],
-    "PL": ["polska"], "CZ": ["czechia", "cesko"], "MA": ["maroc"], "DZ": ["algerie"], "TN": ["tunisie"],
+    "GB": ["uk", "united kingdom", "great britain", "britain", "england", "scotland", "wales", "northern ireland",
+           "royaume uni", "angleterre"],
+    "US": ["usa", "united states", "united states of america", "u s a", "america", "etats unis"],
+    "DE": ["deutschland", "allemagne", "germania"], "ES": ["espana", "espagne", "spagna"],
+    "IT": ["italia", "italie"], "NL": ["nederland", "holland", "the netherlands", "pays bas"],
+    "BE": ["belgique", "belgie", "belgien"], "CH": ["suisse", "schweiz", "svizzera", "svizra"],
+    "AT": ["osterreich", "autriche"], "PT": [], "IE": ["eire", "irlande"], "SE": ["sverige"], "DK": ["danmark"],
+    "NO": ["norge"], "FI": ["suomi"], "PL": ["polska", "pologne"],
+    "CZ": ["czechia", "cesko", "czech republic", "ceska republika", "republique tcheque"],
+    "MA": ["maroc", "marokko", "marruecos"], "DZ": ["algerie"], "TN": ["tunisie"],
     "AE": ["uae", "emirates", "united arab emirates"], "SA": ["ksa"], "MX": ["mexico"], "BR": ["brasil"],
-    "CA": ["canada"], "LU": ["letzebuerg"], "GR": ["hellas"], "TR": ["turkiye"], "IN": ["bharat"],
+    "CA": ["canada"], "LU": ["letzebuerg", "luxemburg"], "GR": ["hellas"], "TR": ["turkiye"], "IN": ["bharat"],
+    "KR": ["korea", "republic of korea", "coree du sud"], "KP": ["north korea"], "CI": ["cote d ivoire", "cote divoire"],
+    "MK": ["macedonia", "north macedonia"], "RU": ["russian federation", "russie"], "VN": ["viet nam"],
+    "CV": ["cabo verde"], "SZ": ["swaziland"], "MM": ["burma"], "TL": ["east timor"], "PS": ["palestine"],
+    "CD": ["drc", "congo kinshasa"], "CG": ["congo brazzaville"], "MD": ["moldavie"], "LB": ["liban"],
 }
-REMOTE = re.compile(r"\b(remote|teletravail|full remote|home office|smart working|telework|work from home)\b")
+# "Remote" in the languages the engine writes CVs in (folded: no accents).
+REMOTE = re.compile(r"\b(remote|remoto|full remote|teletravail|teletrabajo|teletrabalho|telework|home ?office|"
+                    r"smart working|work from home|thuiswerk(?:en)?|fernarbeit|mobiles arbeiten|lavoro da remoto)\b")
+LATIN = re.compile(r"[A-Za-zÀ-ÿĀ-ſ' .-]+")  # alternate names worth matching (not Cyrillic, Arabic, CJK...)
 
 
 @lru_cache(maxsize=1)
@@ -39,7 +51,7 @@ def _world() -> tuple[dict, dict, dict, list]:
     for c in cities:
         spellings = {c["name"]}
         if c["population"] >= 300_000:  # big cities under their local names too: München, Milano, Lisboa
-            spellings |= {a for a in c["alternatenames"] if len(a) >= 4 and re.fullmatch(r"[A-Za-zÀ-ÿ' .-]+", a)}
+            spellings |= {a for a in c["alternatenames"] if len(a) >= 4 and LATIN.fullmatch(a)}
         for s in spellings:
             key = fold(s).strip()
             if key and key not in names and (key not in best or c["population"] > best[key][0]):
@@ -60,9 +72,14 @@ def country_name(code: str) -> str:
 
 
 def country_language(code: str) -> str:
-    """The country's main language code (FR -> fr, DE -> de, BR -> pt)."""
+    """The country's main language the engine can write CVs in (FR -> fr, DE -> de, BR -> pt, LU -> fr since
+    Luxembourgish CVs are not supported), else English."""
     langs = _world()[1].get(code.upper(), {}).get("languages", "")
-    return (langs.split(",")[0].split("-")[0] or "en").lower()
+    for lang in langs.split(","):
+        short = lang.split("-")[0].strip().lower()
+        if short in LABELS:
+            return short
+    return "en"
 
 
 def _grams(text: str, n: int = 4) -> set[str]:
@@ -99,17 +116,42 @@ def _distance_km(a: dict, b: dict) -> float:
     return 6371 * 2 * math.asin(math.sqrt(h))
 
 
+def _spellings(c: dict) -> set[str]:
+    """Every folded spelling of a city: GeoNames' name and its Latin alternate names (Munich, München, Monaco di
+    Baviera...), so the home and the postings may each use their own."""
+    names = {fold(c["name"]).strip()}
+    names |= {fold(a).strip() for a in c.get("alternatenames") or [] if len(a) >= 3 and LATIN.fullmatch(a)}
+    return {n for n in names if n}
+
+
+def _home_city(home: str, code: str) -> dict | None:
+    """The GeoNames city (15,000+ people) the home names in that country, under any of its spellings; the biggest
+    when several share the name. None for a smaller town or a typo."""
+    city = fold((home or "").split(",")[0]).strip()
+    if not city:
+        return None
+    homes = [c for c in _world()[3] if c["countrycode"] == code.upper() and city in _spellings(c)]
+    return max(homes, key=lambda c: c["population"]) if homes else None
+
+
+def home_known(home: str, code: str) -> bool:
+    """False when the home is not a GeoNames city: the radius then covers nothing but the name itself."""
+    return _home_city(home, code) is not None
+
+
 @lru_cache(maxsize=16)
 def home_area(home: str, code: str, radius_km: float = 40) -> frozenset[str]:
-    """Folded names of the cities within radius_km of the home city (the biggest city of that name in the
-    country), the home city included. Empty when the home city is unknown."""
+    """Every spelling of every city within radius_km of the home city, the home city included. When the home is
+    unknown to GeoNames (a town under 15,000 people, a typo), just the name as written."""
     city = fold((home or "").split(",")[0]).strip()
-    cities = [c for c in _world()[3] if c["countrycode"] == code.upper()]
-    homes = [c for c in cities if fold(c["name"]).strip() == city]
-    if not homes:
+    center = _home_city(home, code)
+    if not center:
         return frozenset({city} if city else set())
-    center = max(homes, key=lambda c: c["population"])
-    return frozenset(fold(c["name"]).strip() for c in cities if _distance_km(center, c) <= radius_km)
+    area: set[str] = set()
+    for c in _world()[3]:
+        if c["countrycode"] == code.upper() and _distance_km(center, c) <= radius_km:
+            area |= _spellings(c)
+    return frozenset(area)
 
 
 def near(location: str, area: frozenset[str]) -> bool:

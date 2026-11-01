@@ -7,14 +7,15 @@ param([Parameter(Mandatory = $true)][string]$Who)
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 $task = "Job Hunter - $Who"
+$py = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
 
 Stop-ScheduledTask -TaskName $task -ErrorAction SilentlyContinue
 Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
     Where-Object { $_.CommandLine -like "*hunter*--who $Who*" } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -Confirm:$false }
 
-python -m hunter --who $Who reset --yes
-python -m hunter --who $Who telegram --wait 600
+& $py -m hunter --who $Who reset --yes
+& $py -m hunter --who $Who telegram --wait 600
 
 Start-ScheduledTask -TaskName $task
-Write-Host "Hunter running again. Check with: python -m hunter --who $Who doctor"
+Write-Host "Hunter running again. Check with: $py -m hunter --who $Who doctor"

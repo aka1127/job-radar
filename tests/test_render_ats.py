@@ -88,8 +88,8 @@ def test_truth_check_flags_what_the_profile_does_not_back(cand, cv_en):
     assert any("340" in f for f in flags) and any("AI overclaim" in f for f in flags)
     assert ats.truth_flags("Booked a 15-minute call", cand) == []
     assert ats.unbacked_tools(text, cand) == []
-    assert ats.unbacked_tools(text + "\nCRM: Odoo, HubSpot", cand) == ["names 'Odoo', which is not in the profile"]
-    assert ats.unbacked_tools("Une notion de marketing", cand) == []
+    assert ats.unbacked_tools(text + "\nTools: Odoo, Figma", cand) == ["names 'Odoo', which is not in the profile"]
+    assert ats.unbacked_tools("Une notion de design", cand) == []
 
 
 def test_word_cv_for_portals_keeps_the_parse_safe_order(cand, cv_fr, tmp_path):
@@ -106,23 +106,22 @@ def test_word_cv_for_portals_keeps_the_parse_safe_order(cand, cv_fr, tmp_path):
 
 
 def test_an_ongoing_entry_reads_in_each_language(renderer, cand, cv_fr, tmp_path):
-    cv = cv_fr | {"experience": [{"id": "courtside", "bullets": ["Création d'un **média basket indépendant**."]}]
-                  + cv_fr["experience"]}
     pdf = tmp_path / "cv.pdf"
-    renderer.cv_pdf(cv, cand, pdf, plain=True)
-    res = ats.check(pdf, [], cv["headline"].split(" | ")[0], "fr", cand, max_pages=2, ids=[x["id"] for x in cv["experience"]])
+    renderer.cv_pdf(cv_fr, cand, pdf, plain=True)
+    res = ats.check(pdf, [], cv_fr["headline"].split(" | ")[0], "fr", cand, max_pages=2,
+                    ids=[x["id"] for x in cv_fr["experience"]])
     lines = [l.strip() for l in res["text"].splitlines()]
-    i = lines.index("Fondateur & animateur")
-    assert lines[i + 1:i + 3] == ["Courtside", "janv. 2025 - aujourd'hui"]
+    i = lines.index("Product Designer Senior")
+    assert lines[i + 1:i + 3] == ["Hexalab Santé", "févr. 2024 - aujourd'hui"]
     assert res["issues"] == [], res["issues"]
 
 
 
 def test_a_detailed_cv_runs_onto_two_full_size_pages(renderer, cand, cv_fr, tmp_path):
     """More detail in the roles that matter: two pages at full size, still read in order by an ATS."""
-    facts = {e["id"]: e["facts"] for e in cand.profile["experience"]}
-    exp = [x | {"bullets": [f"**{f.split()[0]} {f.split()[1]}** {' '.join(f.split()[2:])}." for f in facts[x["id"]][:6]]}
-           for x in cv_fr["experience"]]
+    facts = {e["id"]: e["facts"] for e in cand.profile["experience"]}  # every fact of every job, on top of the fixture
+    exp = [x | {"bullets": x["bullets"] + [f"**{f.split()[0]} {f.split()[1]}** {' '.join(f.split()[2:])}."
+                                           for f in facts[x["id"]]]} for x in cv_fr["experience"]]
     cv = cv_fr | {"experience": exp}
     pdf = tmp_path / "cv.pdf"
     pages, scale = renderer.cv_pdf(cv, cand, pdf)

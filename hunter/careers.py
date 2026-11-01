@@ -26,9 +26,9 @@ from protego import Protego
 from . import geo, targets
 from .sources import BOARD_COMPANY, job
 from .text import fold, slug
+from .web import UA
 
 log = logging.getLogger(__name__)
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130 Safari/537.36"}
 IN_FRANCE = re.compile(
     r"\b(france|fr|paris|ile de france|idf|lyon|marseille|lille|bordeaux|toulouse|nantes|nice|montpellier|rennes|"
     r"strasbourg|grenoble|la defense|levallois|boulogne|neuilly|issy|saint denis|nanterre|courbevoie|puteaux|"
@@ -125,11 +125,14 @@ COUNTRY, HOME = "FR", ""  # the candidate's country (ISO code) and home city, se
 
 
 def in_area(location: str, empty: bool = False) -> bool:
-    """The posting is in the candidate's country. empty: the answer for a posting with no location at all (a
-    board added for its jobs in the country usually means there)."""
+    """The posting is in the candidate's country, or remote without naming another country (the scorer then decides
+    whether it is open to people there). empty: the answer for a posting with no location at all (a board added for
+    its jobs in the country usually means there)."""
     if not (location or "").strip():
         return empty
-    return in_france(location) if COUNTRY == "FR" and in_france(location) else geo.in_country(location, COUNTRY)
+    if (COUNTRY == "FR" and in_france(location)) or geo.in_country(location, COUNTRY):
+        return True
+    return bool(geo.REMOTE.search(fold(location))) and not geo.countries_in(location)
 
 
 def parse_ats_url(url: str) -> tuple[str, str] | None:
@@ -263,8 +266,8 @@ def recruitee(slug, company, title_ok):
 
 
 def personio(slug, company, title_ok):
-    for tld in ("de", "com"):
-        r = get(f"https://{slug}.jobs.personio.{tld}/xml?language=fr")
+    for tld in ("de", "com"):  # the feed in the country's language when the board has it, else its default
+        r = get(f"https://{slug}.jobs.personio.{tld}/xml?language={geo.country_language(COUNTRY)}")
         if r is not None and r.ok and b"<workzag-jobs" in r.content[:500]:
             break
     else:
@@ -279,14 +282,14 @@ def personio(slug, company, title_ok):
 
 
 def _workday_parts(slug: str) -> tuple[str, str, str]:
-    """'umusic.wd5/UMGFRA' -> ('umusic.wd5.myworkdayjobs.com', 'umusic', 'UMGFRA')."""
+    """'acme.wd5/AcmeCareers' -> ('acme.wd5.myworkdayjobs.com', 'acme', 'AcmeCareers')."""
     host, site = slug.split("/", 1)
     return f"{host}.myworkdayjobs.com", host.split(".")[0], site
 
 
 def workday(slug, company, title_ok, max_jobs: int = 300):
-    """Workday career sites (Universal Music France, Warner Music, Live Nation...) through the public JSON API their
-    own pages use. A large global board is searched for France and Paris instead of listed in full."""
+    """Workday career sites, through the public JSON API their own pages use. A large global board is searched for
+    the candidate's country and home city instead of listed in full."""
     host, tenant, site = _workday_parts(slug)
     api = f"https://{host}/wday/cxs/{tenant}/{site}"
     headers = {"Content-Type": "application/json", "Accept": "application/json"}

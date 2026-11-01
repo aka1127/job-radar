@@ -8,7 +8,8 @@ DEFAULT_FRAMING = "Lead with the experience that proves the most for this postin
 
 
 def country(cfg: dict) -> str:
-    """ISO code of the country the candidate searches in (FR, DE, US...)."""
+    """ISO code of the country the candidate searches in (FR, DE, US...). Every config sets it (Candidate refuses
+    one without it, onboarding always writes it); FR only stands in for bare dicts in older stored data."""
     return str(cfg.get("country") or "FR").upper()
 
 

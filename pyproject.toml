@@ -1,0 +1,41 @@
+[project]
+name = "job-radar"
+version = "0.2.0"
+description = "AI job-hunting engine: your CV and a short interview in; tailored, ATS-checked applications for matching jobs out, in any country and any field."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "python-jobspy==1.4.1",
+    "playwright>=1.50,<2",
+    "pypdf>=5.0,<7",
+    "pillow>=10.0,<14",
+    "jinja2>=3.1,<4",
+    "pyyaml>=6.0,<7",
+    "requests>=2.31,<3",
+    "beautifulsoup4>=4.12,<5",
+    "python-dotenv>=1.0,<2",
+    "python-docx>=1.1,<2",
+    "protego==0.7.0",
+    "trafilatura==2.3.1",
+    "geonamescache==2.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/aka1127/job-radar"
+
+# The engine reads templates/, assets/ and candidates/example next to the package, so install it in place:
+#   pip install -e .          (or just pip install -r requirements.txt and run python -m hunter from the checkout)
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["hunter"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]

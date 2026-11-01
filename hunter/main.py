@@ -14,17 +14,27 @@ from logging.handlers import RotatingFileHandler
 import requests
 from dotenv import load_dotenv
 
-from .candidate import ROOT, Candidate
+from .brand import text
+from .candidate import HOME, ROOT, Candidate
 
 log = logging.getLogger("hunter")
 
 
 def render_base(cand):
+    """Generic CVs (no posting) from candidates/<name>/base_<lang>.json: a cv.json copied from a pack you liked, or
+    written by hand in the same format (headline, summary, strengths, skills, experience bullets per id)."""
     from .render import Renderer
+    from .targets import cv_languages
 
+    files = [(lang, cand.dir / f"base_{lang}.json") for lang in cv_languages(cand.config)]
+    todo = [(lang, path) for lang, path in files if path.exists()]
+    if not todo:
+        print("No base CV content yet. Copy the cv.json of a pack you like to " + " or ".join(
+            f"candidates/{cand.name}/{p.name}" for _, p in files) + " (edit it freely), then run this again.")
+        return
     with Renderer() as r:
-        for lang in ("en", "fr"):
-            content = json.loads((cand.dir / f"base_{lang}.json").read_text(encoding="utf-8"))
+        for lang, path in todo:
+            content = json.loads(path.read_text(encoding="utf-8")) | {"lang": lang}
             out = cand.dir / "cv" / f"{cand.file_stem}-CV-{lang.upper()}.pdf"
             pages, scale = r.cv_pdf(content, cand, out)
             print(f"{out.name}: {pages} page(s), scale {scale:.2f}")
@@ -50,18 +60,21 @@ def companies(cand, action: str, url: str | None):
 
 def doctor(cand):
     """Check everything the pipeline needs, without spending much."""
-    from .llm import ClaudeCode
+    from .llm import MISSING_CLAUDE, ClaudeCode
     from .notify import Telegram
 
     ok = True
     cc = ClaudeCode(cand.config["claude"])
     try:
         v = subprocess.run([cc.exe, "--version"], capture_output=True, text=True, timeout=60).stdout.strip()
-        print(f"claude CLI: {v}")
+        print(f"claude CLI: {v} ({cc.exe})")
         print("claude login:", cc.run("score", "Reply with the single word: ok")[:20])
+    except FileNotFoundError:
+        ok = False
+        print("claude CLI problem: " + MISSING_CLAUDE)
     except Exception as e:
         ok = False
-        print(f"claude CLI problem: {e}. Open a terminal, run `claude`, and log in once.")
+        print(f"claude CLI problem: {type(e).__name__}: {str(e)[:200]}. Open a terminal, run `claude`, and log in once.")
     fonts = list((ROOT / "assets" / "fonts").glob("*.woff2"))
     print(f"fonts: {len(fonts)} file(s)")
     try:
@@ -103,10 +116,15 @@ def doctor(cand):
     print("health ping:", "on" if cand.env("HEALTHCHECK_URL") else "off (optional: HEALTHCHECK_URL in .env)")
     from . import geo, targets
     code, cfg = targets.country(cand.config), cand.config
-    area = geo.home_area(targets.home_city(cfg), code, float(cfg.get("home_radius_km") or 40))
-    print(f"country: {code} ({geo.country_name(code)}); home: {targets.home_city(cfg) or 'not set'} "
-          f"({len(area)} places within {cfg.get('home_radius_km') or 40} km); "
-          f"CV languages: {', '.join(targets.cv_languages(cfg))}")
+    home, radius = targets.home_city(cfg), float(cfg.get("home_radius_km") or 40)
+    area = geo.home_area(home, code, radius)
+    print(f"country: {code} ({geo.country_name(code)}); home: {home or 'not set'} "
+          f"({len(area)} place names within {radius:g} km); CV languages: {', '.join(targets.cv_languages(cfg))}")
+    if home and not geo.home_known(home, code):
+        ok = False
+        print(f"home problem: '{home}' is not a city GeoNames knows in {geo.country_name(code)} (15,000+ people), so "
+              "the radius covers nothing but that name. Put the nearest bigger city in `home` (keep home_label as "
+              "you like), or in France list home_departments.")
     from .store import Store
     store = Store(cand)
     print(f"career pages watched: {len(store.companies())}; jobs by status: {store.counts() or 'none yet'}")
@@ -171,7 +189,7 @@ def loop(cand, every: int):
                 sys.exit(RESTART)
             if broken != broken_seen:  # a half-finished edit never stops the hunter: the running version carries on
                 log.warning("code updated but it does not compile, keeping the running version: %s", broken)
-                alert(cand, f"New code does not compile, the hunter keeps the running version: {broken}")
+                alert(cand, text("alert_code_broken", error=broken))
                 broken_seen = broken
         try:
             cand = Candidate(cand.name)  # profile and config edits apply from the next cycle, no restart needed
@@ -183,11 +201,11 @@ def loop(cand, every: int):
             m = re.search(r"\|(\d{10})", str(e))
             wait = max(600, int(m.group(1)) - int(time.time()) + 60) if m else 1800
             log.warning("Claude usage limit reached, waiting %d min: %s", wait // 60, str(e)[:120])
-            alert(cand, f"Claude usage limit reached: the hunter pauses for {wait // 60} min, then carries on.")
+            alert(cand, text("alert_limit", minutes=wait // 60))
             ping(cand)  # a planned pause, not a failure
         except Exception as e:
             log.exception("cycle failed")
-            alert(cand, f"A cycle failed and will retry in 10 min: {type(e).__name__}: {first_line(e)}")
+            alert(cand, text("alert_cycle_failed", error=f"{type(e).__name__}: {first_line(e)}"))
             ping(cand, "/fail")
             wait = 600
         time.sleep(wait)
@@ -223,12 +241,12 @@ def ping(cand, suffix: str = ""):
 
 
 def main():
-    load_dotenv(ROOT / ".env")
+    load_dotenv(HOME / ".env")
     for stream in (sys.stdout, sys.stderr):  # job titles and logs carry accents and emojis; never crash on them
         stream.reconfigure(encoding="utf-8", errors="replace")
 
-    ap = argparse.ArgumentParser(prog="hunter", description="Job hunter: boards + career pages -> tailored packs")
-    who_help = "candidate folder name under candidates/ (default: the only one)"
+    ap = argparse.ArgumentParser(prog="hunter", description="Job Radar: boards + career pages -> tailored packs")
+    who_help = "person folder under candidates/ (default: your only person; the example does not count)"
     ap.add_argument("--who", default=argparse.SUPPRESS, help=who_help)
     ap.add_argument("--log", help="log to this file instead of the console (rotated at 5 MB, 3 old files kept)")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -243,8 +261,8 @@ def main():
     lp.add_argument("--every", type=int, default=60, help="minutes between cycles")
     ap_ = sub.add_parser("apply", help="build a pack for one job link")
     ap_.add_argument("url")
-    sub.add_parser("base", help="render the generic EN/FR CVs")
-    sub.add_parser("archive", help="what the national archive of postings holds")
+    sub.add_parser("base", help="render generic CVs from candidates/<name>/base_<lang>.json (a pack's cv.json)")
+    sub.add_parser("archive", help="what the archive of every posting seen holds")
     sub.add_parser("opendata", help="import the State's public-sector offers file now (data.gouv.fr)")
     bd = sub.add_parser("boards", help="find company job boards with jobs in the candidate's country in public ATS lists")
     bd.add_argument("--refresh", action="store_true", help="download the latest lists first")
@@ -282,6 +300,34 @@ def main():
         print(f"Done: {folder}\nNext: read profile.yaml and config.yaml, answer QUESTIONS.md, then:\n"
               f"  python -m hunter telegram --who {a.name}\n  python -m hunter run --who {a.name} --dry-run")
         return
+    if a.cmd == "usage":  # the commands about the machine, not about one person
+        usage(a.days)
+        return
+    if a.cmd == "archive":
+        from .archive import Archive
+        print(json.dumps(Archive().stats(), indent=2, ensure_ascii=False))
+        return
+    if a.cmd == "opendata":
+        from .archive import Archive
+        from .opendata import import_due
+        arch = Archive()
+        arch.put("csp_checked", "2000-01-01T00:00:00+00:00")  # check data.gouv.fr now
+        print(f"{import_due(arch)} new public-sector offers; archive: {arch.stats()['postings']} postings")
+        return
+    if a.cmd == "harvest":
+        from datetime import datetime, timedelta, timezone
+
+        from .archive import Archive
+        from .harvest import Harvester
+        from .sources import FranceTravail
+        ft = FranceTravail()
+        if not ft.enabled:
+            print("FRANCE_TRAVAIL_CLIENT_ID / _SECRET are not in .env")
+        else:
+            arch = Archive()
+            new = Harvester(ft, arch).run(datetime.now(timezone.utc) - timedelta(days=a.days))
+            print(f"{new} new offers; archive: {arch.stats()['postings']} postings")
+        return
     cand = Candidate(getattr(a, "who", None))
 
     if a.cmd == "run":
@@ -297,36 +343,18 @@ def main():
     elif a.cmd == "base":
         render_base(cand)
     elif a.cmd == "boards":
-        from .boards import discover, fetch_lists
+        from .boards import PROBES, discover, fetch_lists
         from .store import Store
         from .targets import country
-        folder = ROOT / "data" / "discovery"
+        folder = HOME / "data" / "discovery"
+        folder.mkdir(parents=True, exist_ok=True)
         if a.refresh:
             print("lists fetched:", fetch_lists(folder))
+        if not any((folder / f"{ats}_companies.json").exists() for ats in PROBES):
+            print("No board lists yet: run `python -m hunter boards --refresh` once (about an hour).")
+            return
         code = country(cand.config)
         print("boards added:", discover(Store(cand), folder, folder / f"boards_{code.lower()}.csv", country=code))
-    elif a.cmd == "opendata":
-        from .archive import Archive
-        from .opendata import import_due
-        arch = Archive()
-        arch.put("csp_checked", "2000-01-01T00:00:00+00:00")  # check data.gouv.fr now
-        print(f"{import_due(arch)} new public-sector offers; archive: {arch.stats()['postings']} postings")
-    elif a.cmd == "archive":
-        from .archive import Archive
-        print(json.dumps(Archive().stats(), indent=2, ensure_ascii=False))
-    elif a.cmd == "harvest":
-        from datetime import datetime, timedelta, timezone
-
-        from .archive import Archive
-        from .harvest import Harvester
-        from .sources import FranceTravail
-        ft = FranceTravail()
-        if not ft.enabled:
-            print("FRANCE_TRAVAIL_CLIENT_ID / _SECRET are not in .env")
-        else:
-            arch = Archive()
-            new = Harvester(ft, arch).run(datetime.now(timezone.utc) - timedelta(days=a.days))
-            print(f"{new} new offers; archive: {arch.stats()['postings']} postings")
     elif a.cmd == "logos":
         from .logos import refresh
         print("\n".join(refresh(cand, a.force)) or "All logos already cached (use --force to refetch).")
@@ -337,8 +365,6 @@ def main():
         companies(cand, a.action, a.url)
     elif a.cmd == "doctor":
         doctor(cand)
-    elif a.cmd == "usage":
-        usage(a.days)
     elif a.cmd == "reset":
         from .store import Store
         if not a.yes:

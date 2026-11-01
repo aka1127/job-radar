@@ -59,15 +59,15 @@ def test_crawler_reads_job_pages_first_and_skips_seen_ones(monkeypatch):
 
 
 def test_workday_boards_are_read_for_france_only(monkeypatch):
-    """Universal Music France, Warner, Live Nation: the public JSON API behind their Workday career sites."""
-    assert careers.parse_ats_url("https://umusic.wd5.myworkdayjobs.com/fr-FR/UMGFRA/job/x") == ("workday", "umusic.wd5/UMGFRA")
+    """A large group's Workday career site, read through the public JSON API behind its own pages."""
+    assert careers.parse_ats_url("https://acme.wd5.myworkdayjobs.com/fr-FR/AcmeFR/job/x") == ("workday", "acme.wd5/AcmeFR")
     listing = {"total": 3, "jobPostings": [
         {"title": "Chef de projet digital H/F", "externalPath": "/job/Paris/Chef_1", "locationsText": "Paris, France"},
-        {"title": "A&R Manager", "externalPath": "/job/London/AR_2", "locationsText": "London, UK"},
+        {"title": "Sales Manager", "externalPath": "/job/London/Sales_2", "locationsText": "London, UK"},
         {"title": "Stage marketing", "externalPath": "/job/Paris/Stage_3", "locationsText": "Paris, France"}]}
-    detail = {"jobPostingInfo": {"title": "Chef de projet digital H/F", "location": "Paris, France", "jobReqId": "UMG-1",
-                                 "startDate": "2026-10-20", "externalUrl": "https://umusic.wd5.myworkdayjobs.com/UMGFRA/job/1",
-                                 "jobDescription": "<p>Lancement des sorties rap</p>"}}
+    detail = {"jobPostingInfo": {"title": "Chef de projet digital H/F", "location": "Paris, France", "jobReqId": "ACME-1",
+                                 "startDate": "2026-10-20", "externalUrl": "https://acme.wd5.myworkdayjobs.com/AcmeFR/job/1",
+                                 "jobDescription": "<p>Lancement de la nouvelle plateforme</p>"}}
 
     class R:
         ok = True
@@ -81,11 +81,11 @@ def test_workday_boards_are_read_for_france_only(monkeypatch):
     posts, gets = [], []
     monkeypatch.setattr(careers.requests, "post", lambda url, **kw: posts.append(kw["json"]) or R(listing))
     monkeypatch.setattr(careers.requests, "get", lambda url, **kw: gets.append(url) or R(detail))
-    jobs = list(careers.workday("umusic.wd5/UMGFRA", "Universal Music France", lambda t: "stage" not in t.lower()))
+    jobs = list(careers.workday("acme.wd5/AcmeFR", "Acme France", lambda t: "stage" not in t.lower()))
     assert [(j["title"], j["company"], j["posted"]) for j in jobs] == [
-        ("Chef de projet digital H/F", "Universal Music France", "2026-10-20")]
-    assert jobs[0]["description"] == "Lancement des sorties rap" and jobs[0]["id"] == "workday:umusic.wd5/UMGFRA:UMG-1"
-    assert gets == ["https://umusic.wd5.myworkdayjobs.com/wday/cxs/umusic/UMGFRA/job/Paris/Chef_1"]  # one detail fetch
+        ("Chef de projet digital H/F", "Acme France", "2026-10-20")]
+    assert jobs[0]["description"] == "Lancement de la nouvelle plateforme" and jobs[0]["id"] == "workday:acme.wd5/AcmeFR:ACME-1"
+    assert gets == ["https://acme.wd5.myworkdayjobs.com/wday/cxs/acme/AcmeFR/job/Paris/Chef_1"]  # one detail fetch
     assert posts[0]["searchText"] == ""
 
 

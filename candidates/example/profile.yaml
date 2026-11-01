@@ -16,317 +16,241 @@ identity:
   linkedin_label: "linkedin.com/in/alex-moreau-example"
   linkedin_url: "https://www.linkedin.com/in/alex-moreau-example"
   work_authorization: "EU citizen / Citoyen de l'UE"
-  # Shown in the CV header for sport, content and event jobs only (cv.portfolio_families in config.yaml).
-  portfolio_label: "courtside.example.com"
-  portfolio_url: "https://courtside.example.com"
+  # Shown in the CV header for the design families only (cv.portfolio_families in config.yaml).
+  portfolio_label: "alexmoreau.example.com"
+  portfolio_url: "https://alexmoreau.example.com"
   photo: ""            # optional: file name of a professional photo in this folder, e.g. photo.jpg
   languages:
     - {name: French, level: "Native", fr: "Français : langue maternelle"}
     - {name: English, level: "Fluent (C1)", fr: "Anglais : courant (C1)"}
-    - {name: Spanish, level: "Professional (B2)", fr: "Espagnol : professionnel (B2)"}
-    - {name: Portuguese, level: "Basic", fr: "Portugais : notions"}
+    - {name: Spanish, level: "Intermediate (B1)", fr: "Espagnol : intermédiaire (B1)"}
 
-# Links the candidate publishes. Used in sport, content and creative applications (letter, messages).
+# Links the candidate publishes. Used in letters and messages for the design families.
 links:
-  courtside_site: "https://courtside.example.com"
-  courtside_podcast: "https://courtside.example.com/podcast"
+  portfolio: "https://alexmoreau.example.com"
+  case_studies: "https://alexmoreau.example.com/work"
 
 positioning: >
-  Digital marketer and project manager with 5+ years of experience across 3 countries (France, Spain,
-  Portugal), B2B and B2C, after 2 years in sales and customer service. Since January 2025 runs Courtside, an
-  independent basketball media (podcast, video series, game coverage). Priority target: the sports industry
-  (clubs, leagues, sports brands, sports media and events), where Courtside and the marketing background meet.
-  Also strong for digital marketing, content and social media, project management, events, and partnerships or
-  account management. Trilingual FR/EN/ES. AI level: everyday user; AI stays a supporting skill.
+  Product designer (UX/UI) with 8+ years of experience, from a web agency in Lille to a health-tech scale-up in
+  Lyon: research, flows, prototypes, design systems and accessibility (WCAG 2.1 AA, RGAA), through to developer
+  handoff. Priority target: healthcare (hospital groups, e-health, medtech, health insurers), where the patient
+  portal and clinician app at Hexalab Santé count. Also strong for product design, UX research, design systems
+  and accessibility roles. Bilingual FR/EN. AI level: everyday user of design and writing assistants; AI stays a
+  supporting skill.
 
 # Notes every letter, message and CV must follow for this candidate.
 writing_notes:
-  - Courtside (Jan 2025 - present) is always first in experience. Title it as an independent media, never as a
-    company with employees and never as paid work. Sport jobs (FRAMING sport) get 4-6 bullets with the audience
-    numbers. Other jobs get 2 bullets, reframed for the posting.
-  - Write "guests including a club general manager" / "invités dont un directeur général de club". Never suggest
-    the candidate worked for a club, a league or a brand they only interviewed.
-  - The headline always starts from the posting's job title, never "Founder" / "Fondateur".
-  - When a letter cites Velora Mobility, say once that it was a work-study placement alongside the MSc (in French
-    "en alternance"; never the word alternance in English).
-  - Experience is "5+ years of experience" / "+5 ans d'expérience". Use exactly that wording; never a bigger
-    number, never years in a narrower specialty.
-  - For Portside Logistics, on project management postings the alternative title "Project Manager, Digital
-    Strategy" may replace "Digital Marketing Manager".
-  - Partnership and account postings lead with the 2 years at Callwave (sales, upselling, client follow-up), then
-    partner outreach at Portside Logistics and company partnerships at Atlantica Business School.
+  - Hexalab Santé (Feb 2024 - present) is always first. Health jobs (FRAMING health) get 4-6 bullets with the
+    numbers (usability sessions, WCAG AA products, squads using the design system). Other jobs get 2-3 bullets.
+  - Experience is "8+ years of experience" / "+8 ans d'expérience" (since Sep 2018). Use exactly that wording;
+    never a bigger number, never years in a narrower specialty.
+  - "Never call Alex an engineer or a developer: the Atelier Nord role was web integration (HTML, CSS, WordPress),
+    which is why handoff with developers goes smoothly. Say so, no more."
+  - Write "co-organiser of the Lyon UX Meetup", never founder; "maintainer of Clair UI", never "used by thousands".
+  - The headline always starts from the posting's job title, never "Senior" unless the posting says so.
+  - When a letter cites the Orbital Studio bank app, say "a retail bank" without naming one.
+  - On research postings, Orbital Studio may use the alternative title "UX Researcher & Designer".
 
 # Role families the candidate genuinely qualifies for. Used for search terms and CV headlines.
 role_families:
-  sport:
-    headline_en: Sports Marketing & Project Manager | Sports media, partnerships, digital
-    headline_fr: Chef de projet Marketing Sport | Média sport, partenariats, digital
-  digital_marketing:
-    headline_en: Digital Marketing Manager | SEO/SEA, paid social, CRM & analytics
-    headline_fr: Responsable Marketing Digital | SEO/SEA, social ads, CRM & analytics
-  project_management:
-    headline_en: Project Manager | Digital & marketing projects, planning, coordination
-    headline_fr: Chef de projet | Projets digitaux & marketing, planification, coordination
-  content_social:
-    headline_en: Content & Social Media Manager | Video, podcast, community growth
-    headline_fr: Responsable Contenu & Social Media | Vidéo, podcast, croissance d'audience
-  partnerships:
-    headline_en: Partnerships & Account Manager | Prospecting, partner follow-up, CRM
-    headline_fr: Chargé de partenariats | Prospection, suivi des partenaires, CRM
+  health:
+    headline_en: Product Designer, Health | Patient and clinician products, accessibility, design system
+    headline_fr: Product Designer santé | Produits patients et soignants, accessibilité, design system
+  product_design:
+    headline_en: Product Designer | UX/UI, prototyping, design systems, handoff
+    headline_fr: Product Designer | UX/UI, prototypage, design systems, handoff
+  ux_research:
+    headline_en: UX Researcher & Designer | Interviews, usability testing, journey maps
+    headline_fr: UX Researcher & Designer | Entretiens, tests utilisateurs, parcours
+  design_system:
+    headline_en: Design System Designer | Tokens, components, Storybook, documentation
+    headline_fr: Designer Design System | Tokens, composants, Storybook, documentation
+  accessibility:
+    headline_en: Accessibility & Inclusive Design Specialist | WCAG 2.1, RGAA, audits
+    headline_fr: Spécialiste accessibilité & design inclusif | WCAG 2.1, RGAA, audits
 
 experience:
-  - id: courtside
-    badge: C
-    title_en: Founder & Host
-    title_fr: Fondateur & animateur
-    company: Courtside
-    context_en: "Independent basketball media"
-    context_fr: "Média basket indépendant"
+  - id: hexalab
+    badge: HX
+    title_en: Senior Product Designer
+    title_fr: Product Designer Senior
+    company: Hexalab Santé
+    context_en: "E-health scale-up, B2B2C"
+    context_fr: "Scale-up e-santé, B2B2C"
     domain: ""
     location: Lyon, France
-    dates: "Jan 2025 - Present"
-    company_context: The candidate's own basketball media (podcast, video series, game coverage). Not a company with staff.
+    dates: "Feb 2024 - Present"
+    company_context: E-health company selling a patient portal and a clinician web app to hospital groups and clinics.
     facts:
-      - Founded Courtside, an independent basketball media; concept, filming, editing, post-production and distribution are all the candidate's own work
-      - Hosts Courtside Talks, a long-form podcast with players, coaches, a referee, a sports journalist and guests including a club general manager; on YouTube and Spotify
-      - Created Pickup Diaries, a weekly video series filmed on the outdoor courts of Lyon, featuring more than 20 players
-      - Covers amateur and semi-professional games with photo and video recaps published within 24 hours
-      - Runs the partnership outreach to local sports brands for giveaways and co-branded content
-      - Editorial planning, interview preparation and guest outreach for every episode
+      - Designs the patient portal (appointments, results, messaging) and the clinician web app, from research to developer handoff
+      - Built and maintains Pulse, the design system (tokens, components, documentation in Storybook and Zeroheight), used by 4 product squads
+      - Ran more than 120 usability sessions with patients, nurses and doctors since 2024, in French and English
+      - "Brought 3 products to WCAG 2.1 AA (RGAA) with the front-end team: contrast, keyboard paths, screen-reader testing"
+      - Leads design critiques and the weekly research share-out; mentors a junior designer
+      - Prototypes in Figma and Protopie; validates flows with Maze; synthesises research in Dovetail
+      - Works in Scrum with product managers and engineers (Jira), two-week sprints
     metrics:
-      instagram_views_30_days: "1.1 million Instagram views over 30 days (FR: 1,1 million de vues ; 1.1M)"
-      podcast_plays: "40K+ podcast plays (FR: plus de 40 000 écoutes ; 40K)"
-      players_featured: "more than 20 players featured (FR: plus de 20 joueurs)"
-  - id: velora
-    title_en: Digital Marketing Analyst (work-study)
-    title_fr: Analyste Marketing Digital (alternance)
-    company: Velora Mobility
-    context_en: "Shared e-bikes, B2B2C"
-    context_fr: "Vélos en libre-service, B2B2C"
+      usability_sessions: "120+ usability sessions since 2024 (FR: plus de 120 tests utilisateurs)"
+      wcag_products: "3 products at WCAG 2.1 AA (FR: 3 produits conformes WCAG 2.1 AA / RGAA)"
+      squads: "design system used by 4 product squads (FR: design system utilisé par 4 équipes produit)"
+  - id: orbital
+    title_en: Product Designer
+    title_fr: Product Designer
+    title_alt_en: UX Researcher & Designer
+    title_alt_fr: UX Researcher & Designer
+    company: Orbital Studio
+    context_en: "Digital product agency"
+    context_fr: "Agence de design produit"
     domain: ""
-    company_context: Shared e-bike operator working with cities and employers. Work-study contract alongside the MSc.
+    company_context: Lyon agency designing web and mobile products for banks, retailers and public services.
     location: Lyon, France
-    dates: "Sep 2023 - Dec 2024"
+    dates: "Sep 2021 - Jan 2024"
     facts:
-      - Work-study role, held alongside the MSc Digital Marketing at Rhône Business School
-      - Led end-to-end digital marketing projects, from planning and scoping to execution and performance analysis
-      - Coordinated cross-functional teams (marketing, product, city partners) to deliver campaigns on time
-      - Built and maintained project timelines, dashboards and reporting tools
-      - Designed Power BI and Excel dashboards for campaign analysis and decision-making
-      - Monitored KPIs and turned them into actionable recommendations
-      - Managed email campaigns and lead scoring in HubSpot
-      - Social media content strategy with the agency; produced social content with Canva and Adobe Premiere Pro
-      - Website optimisation projects on WordPress (performance, user experience, SEO and content)
-      - Competitive analysis of shared-mobility operators to adjust marketing actions
-      - Tracked user behaviour and campaign effectiveness with Google Analytics and Google Tag Manager
-      - Used ChatGPT to speed up first drafts and data cleaning
-    metrics: {}
-  - id: portside
-    title_en: Digital Marketing Manager
-    title_fr: Responsable Marketing Digital
-    title_alt_en: Project Manager, Digital Strategy
-    title_alt_fr: Chef de projet stratégie digitale
-    company: Portside Logistics
-    context_en: "Freight logistics, SaaS"
-    context_fr: "Logistique de fret, SaaS"
+      - Designed a retail bank's mobile app (onboarding, transfers, card controls) with the client's product team
+      - Redesigned an e-commerce checkout; conversion rose by 18% in the month after release
+      - Facilitated 14 design sprints with clients, from problem framing to tested prototype
+      - Ran user interviews and usability tests for every project; wrote the research reports and journey maps
+      - Delivered a public-sector form service accessible to WCAG 2.1 AA, with the agency's front-end developers
+      - Handed designs over in Figma with component specs; reviewed implementation in Storybook
+    metrics:
+      checkout: "+18% conversion on the e-commerce checkout (FR: +18 % de conversion)"
+      sprints: "14 design sprints facilitated (FR: 14 design sprints animés)"
+  - id: kerno
+    title_en: UX/UI Designer
+    title_fr: UX/UI Designer
+    company: Kerno Mobility
+    context_en: "Public transport ticketing, B2B2C"
+    context_fr: "Billettique transports, B2B2C"
     domain: ""
-    company_context: Freight-forwarding start-up that built a software-as-a-service platform for shipment tracking.
-    location: Lisbon, Portugal
-    dates: "Jul 2022 - Aug 2023"
-    facts:
-      - Led the launch of the shipment-tracking platform, coordinating business, design and development stakeholders
-      - Led the new brand identity (brand book) and the Webflow website as a full-cycle project
-      - SEO on Webflow and content strategy, including the LinkedIn content strategy
-      - Nurtured the shipper pipeline in HubSpot and built the outreach strategy to logistics managers
-      - Ran partner outreach campaigns (email, LinkedIn) to book meetings with carriers and clients
-      - Organised the company's first trade show booth, from the brief to the follow-up of the leads
-      - Produced communication materials (brochures, sales decks) for events and partner meetings
-    metrics: {}
-  - id: bocado
-    title_en: Growth Marketing Manager
-    title_fr: Responsable Growth Marketing
-    company: Bocado
-    context_en: "Food delivery marketplace, B2C"
-    context_fr: "Marketplace de livraison de repas, B2C"
-    domain: ""
-    company_context: Regional food-delivery marketplace connecting restaurants and customers.
-    location: Valencia, Spain
-    dates: "Sep 2021 - Jun 2022"
-    facts:
-      - Ran Google Ads and Meta Ads campaigns for customer acquisition in three cities
-      - Planned and ran email and push campaigns in Brevo - automated sequences, A/B tests, performance analysis
-      - Built the restaurant referral programme and its landing pages
-      - Automated lead routing between the website, the CRM and the sales team with Zapier
-      - Managed SEO for the city landing pages with Semrush and Google Search Console
-      - Tracked funnel performance in Google Analytics and Looker Studio
-      - Coordinated launches with sales and operations in Notion and Trello
-    metrics: {}
-  - id: atlantica
-    title_en: Digital Marketing & Admissions Officer
-    title_fr: Chargé Marketing Digital & Admissions
-    company: Atlantica Business School
-    context_en: "Business school, part-time"
-    context_fr: "École de commerce, temps partiel"
-    domain: ""
-    company_context: Private business school, student recruitment (B2C). Part-time role, held alongside the master's.
-    location: Valencia, Spain
+    company_context: Scale-up selling a ticketing app and a back office to public transport operators.
+    location: Nantes, France
     dates: "Jan 2020 - Aug 2021"
     facts:
-      - Designed and ran digital campaigns across social media, email marketing and webinars
-      - Admissions - personalised follow-up of prospective students until enrolment
-      - Partnership outreach to companies to host students for internships
-      - Produced the school's video testimonials, from filming to editing
-      - Ran Facebook Ads and Google Ads for lead generation and event registrations
-      - Analysed campaign performance in Google Analytics
-      - Created visual content with Canva and Figma
-      - Managed projects and deadlines in Notion and Asana
-      - Managed the HubSpot CRM to nurture prospective students
-    metrics: {}
-  - id: pixelfox
-    title_en: Social Media Manager
-    title_fr: Social Media Manager
-    company: Pixelfox Studio
-    context_en: "Social media agency, part-time"
-    context_fr: "Agence social media, temps partiel"
+      - Designed the commuter app (tickets, passes, real-time disruptions) for iOS and Android
+      - "Led the research with commuters: 40 interviews, diary studies, in-station observation"
+      - Rebuilt the purchase flow; the app-store rating went from 3.2 to 4.4 over a year
+      - Designed the operators' back office (sales dashboards, fare rules) with the data team
+      - Set up the first component library in Figma and the handoff routine with developers
+    metrics:
+      rating: "app-store rating from 3.2 to 4.4 (FR: note de 3,2 à 4,4)"
+      interviews: "40 commuter interviews (FR: 40 entretiens voyageurs)"
+  - id: atelier
+    badge: AN
+    title_en: Web Integrator
+    title_fr: Intégrateur web
+    company: Atelier Nord
+    context_en: "Web agency"
+    context_fr: "Agence web"
     domain: ""
-    company_context: Content and social media agency for local brands. Part-time role.
-    location: Marseille, France
-    dates: "Sep 2019 - Dec 2019"
+    company_context: Small web agency in Lille building sites for local companies and associations.
+    location: Lille, France
+    dates: "Sep 2018 - Dec 2019"
     facts:
-      - Managed social media accounts for several local brands (sports shops, restaurants, gyms)
-      - Developed and executed content calendars on Instagram and Facebook
-      - Created photo and video content for target audiences
-      - Managed Facebook and Instagram Ads campaigns
-      - Tracked and followed up leads in HubSpot CRM
-      - Monitored performance metrics to optimise campaigns
-    metrics: {}
-  - id: callwave
-    badge: CW
-    title_en: Sales & Customer Service Advisor
-    title_fr: Conseiller commercial & relation client
-    company: Callwave
-    context_en: "Customer experience BPO"
-    context_fr: "Relation client (BPO)"
-    domain: ""
-    company_context: Customer experience outsourcing
-    location: Lyon, France
-    dates: "Jul 2017 - Jun 2019"
-    facts:
-      - Personalised client follow-up, needs analysis and problem resolution with high service quality
-      - Upselling during customer calls for telecom and energy clients
-      - Used Salesforce to manage client relationships, sales and retention
-      - Trained new advisors on the sales script and the CRM
-    metrics: {}
+      - Integrated designs in HTML and CSS for about 30 WordPress and Webflow sites, responsive and tested on real devices
+      - Took over the design of the smaller sites (layouts, typography, imagery) after the first year
+      - Made the agency's templates meet basic accessibility rules (contrast, alt texts, keyboard focus)
+      - Trained clients on their WordPress sites
+    metrics:
+      sites: "about 30 sites integrated (FR: une trentaine de sites)"
 
 # Shown in a short "Projects & involvement" block after experience (one line each), for the families listed.
 projects:
-  - id: shots
-    name: Courtside Shots
-    families: [sport, content_social, event]
-    line_en: "Sports photographer since 2016: amateur basketball and running events; photo series on the outdoor courts of Lyon (2024)"
-    line_fr: "Photographe sport depuis 2016 : basket amateur et courses à pied ; série photo sur les terrains extérieurs de Lyon (2024)"
-    link_label: "courtside.example.com/shots"
-    link: "https://courtside.example.com/shots"
-  - id: association
-    name: Lyon Student Sports Association
-    families: [event, project_management, partnerships]
-    line_en: "Volunteer 2015 - 2018: events volunteer, then events lead, then head of communication; organised tournaments and a charity run"
-    line_fr: "Bénévole 2015 - 2018 : bénévole événements, puis responsable événements, puis responsable communication ; organisation de tournois et d'une course solidaire"
-  - id: writing
-    name: Basketball writing
-    families: [sport]
-    line_en: "Game analyses for a regional basketball blog; guest on a local sports radio show"
-    line_fr: "Analyses de matchs pour un blog de basket régional ; invité d'une émission de radio sportive locale"
+  - id: meetup
+    name: Lyon UX Meetup
+    families: [product_design, ux_research, design_system]
+    line_en: "Co-organiser since 2022: 10 evenings a year on research, design systems and accessibility"
+    line_fr: "Co-organisation depuis 2022 : 10 soirées par an sur la recherche, les design systems et l'accessibilité"
+    link_label: "alexmoreau.example.com/meetup"
+    link: "https://alexmoreau.example.com/meetup"
+  - id: clair
+    name: Clair UI
+    families: [design_system, product_design]
+    line_en: "Maintainer of a free Figma kit of accessible components (RGAA), used by two French public services"
+    line_fr: "Mainteneur d'un kit Figma gratuit de composants accessibles (RGAA), utilisé par deux services publics"
+    link_label: "alexmoreau.example.com/clair"
+    link: "https://alexmoreau.example.com/clair"
+  - id: probono
+    name: Pro bono design
+    families: [health]
+    line_en: "Redesigned the appointment flow of a Lyon health charity's website (2023), with its volunteers"
+    line_fr: "Refonte du parcours de prise de rendez-vous d'une association de santé lyonnaise (2023), avec ses bénévoles"
 
 # More facts, usable in letters, messages and interview prep (not CV entries of their own).
 other_facts:
-  - Courtside Talks has 30 episodes; the most played one is the interview of a youth coach
-  - Plays in an amateur basketball league in Lyon
-  - Organised the 3x3 tournament of the student sports association two years in a row
-  - Likes planning tools and checklists; strong on deadlines and coordination
+  - Speaks at the Lyon UX Meetup about research in regulated products (health, banking)
+  - Runs usability sessions in French and in English
+  - Shadows nurses for two days per hospital before designing a clinical workflow at Hexalab Santé
+  - Likes checklists and written decisions; keeps a design decision log per product
 
 # Real AI level: everyday user. Supporting skill only.
 ai_practice:
-  - Uses ChatGPT day to day for drafts, content ideas and data cleaning
-  - Tests new AI marketing tools when they come out
-  - No-code automation with Zapier (not AI, same "automate the boring parts" mindset)
+  - Uses writing and design assistants day to day for first drafts, research synthesis and alt texts
+  - Tests the AI features of Figma as they come out
 
 skills:
   confirmed:
-    sport: [Sports content, Sports media, Fan engagement, Brand partnerships, Sponsorship outreach, Game coverage, Podcast production, Interviewing, Editorial planning, Community building, Basketball culture]
-    project_management: [Project scoping, Planning, Timelines, Stakeholder coordination, Cross-functional coordination, KPI tracking, Reporting, Event organisation, Trade shows, Notion, Asana, Trello]
-    partnerships_sales: [Prospecting, Outreach, Upselling, Client follow-up, Pipeline nurturing, Partner management, Business development, Customer relationship management]
-    acquisition: [SEO, SEM, Google Ads, Facebook Ads, Instagram Ads, Meta Ads, Semrush, Google Search Console, Growth hacking, Lead generation, A/B testing, Conversion optimisation, Referral programmes]
-    crm_automation: [HubSpot, Salesforce, Brevo, Zapier, Email marketing, Lead nurturing, Lead scoring, LinkedIn outreach, Push notifications]
-    ai: [ChatGPT, AI-assisted content]
-    data: [Google Analytics, Google Tag Manager, Power BI, Excel, Looker Studio (Data Studio), Dashboards, Competitive analysis]
-    web_content: [WordPress, Webflow, Website redesign, Copywriting, Content strategy, LinkedIn content, Social media strategy, Community management, Podcast, Photo/video content, Canva, Webinars]
-    video_photo: [Photography, Videography, Video editing, Post-production, Adobe Premiere Pro]
-    brand_design: [Branding, Brand book, Figma, Event materials, Sales decks]
-  # Strongly implied by the experience (renamed tools or direct consequences). Safe to use.
-  implied: [GA4, Meta Ads Manager, Landing pages, Marketing automation, Funnel optimisation, B2B marketing, B2C marketing, Multichannel campaigns, Data-driven marketing, CRM workflows, Audience growth, Social media content, YouTube, Instagram, Content production]
+    product_design: [User flows, Wireframes, Prototyping, Interaction design, UI design, Mobile app design, Web app design, Design critique, Figma, Protopie]
+    research: [User interviews, Usability testing, Diary studies, Surveys, Personas, Journey maps, Research synthesis, Dovetail, Maze, Lookback, Hotjar]
+    design_system: [Design tokens, Component libraries, Figma variables, Storybook, Zeroheight, Documentation, Design QA]
+    accessibility: [WCAG 2.1, RGAA, Screen-reader testing, Colour contrast, Keyboard navigation, Inclusive design, Opquast]
+    delivery: [Design sprints, Scrum, Developer handoff, Jira, Notion, Miro, Workshops]
+    web: [HTML, CSS, Responsive design, WordPress, Webflow]
+    visual: [Typography, Layout, Iconography, Illustrator, Photoshop]
+    ai: [AI-assisted drafts, Research synthesis with AI]
+  # Strongly implied by the experience (renamed practices or direct consequences). Safe to use.
+  implied: [Information architecture, Product discovery, Stakeholder workshops, Data-informed design, Health product design, Regulated products, Cross-functional collaboration, Remote collaboration, Mentoring, Design documentation]
   # Tools an interview could test hands-on: confirm before moving them to `confirmed`.
-  to_confirm: [SQL, BigQuery, Python, Salesforce Marketing Cloud]
+  to_confirm: [Framer, After Effects, React, SQL]
 
 # Quick facts shown as tiles under the header. Only true, checkable facts.
 highlights:
-  - {en: "5+ years of experience", fr: "+5 ans d'expérience"}
-  - {en: "3 countries: FR, ES, PT", fr: "3 pays : FR, ES, PT"}
-  - {en: "Trilingual FR, EN, ES", fr: "Trilingue FR, EN, ES"}
+  - {en: "8+ years of experience", fr: "+8 ans d'expérience"}
+  - {en: "3 products at WCAG 2.1 AA", fr: "3 produits WCAG 2.1 AA"}
+  - {en: "Bilingual FR, EN", fr: "Bilingue FR, EN"}
   - {en: "Available within a month", fr: "Disponible sous un mois"}
-# For sport, content and social media jobs (cv.creative_families).
+# For the design families (cv.creative_families).
 highlights_creative:
-  - {en: "1.1M Instagram views in 30 days", fr: "1,1 M de vues Instagram en 30 jours", icon: star}
-  - {en: "40K+ podcast plays", fr: "40K+ écoutes podcast", icon: chat}
-  - {en: "5+ years of experience", fr: "+5 ans d'expérience", icon: briefcase}
-  - {en: "Trilingual FR, EN, ES", fr: "Trilingue FR, EN, ES", icon: globe}
+  - {en: "120+ usability sessions run", fr: "120+ tests utilisateurs menés", icon: chat}
+  - {en: "Design system used by 4 squads", fr: "Design system utilisé par 4 équipes", icon: star}
+  - {en: "8+ years of experience", fr: "+8 ans d'expérience", icon: briefcase}
+  - {en: "Bilingual FR, EN", fr: "Bilingue FR, EN", icon: globe}
 
 education:
-  - degree_en: "MSc Digital Marketing"
-    degree_fr: "MSc Marketing Digital"
-    school: Rhône Business School
+  - degree_en: "Bachelor's in Web Design (licence professionnelle)"
+    degree_fr: "Licence professionnelle Design web"
+    school: Université des Flandres
     domain: ""
-    location: Lyon, France
-    dates: "2023 - 2024"
-    detail_en: Analytics, branding, digital strategy, CRM & automation, SEO/SEM
-    detail_fr: Analytics, branding, stratégie digitale, CRM & automatisation, SEO/SEA
-  - degree_en: "Master's in International Marketing"
-    degree_fr: "Master Marketing International"
-    school: Atlantica Business School
+    location: Lille, France
+    dates: "2017 - 2018"
+    detail_en: UX methods, front-end integration, projects for local companies
+    detail_fr: Méthodes UX, intégration front-end, projets pour des entreprises locales
+  - degree_en: "DN MADE Graphic Design & Interactivity"
+    degree_fr: "DN MADE Graphisme & interactivité"
+    school: École Supérieure d'Arts Appliqués du Nord
     domain: ""
-    location: Valencia, Spain
-    dates: "2019 - 2021"
-    detail_en: Digital marketing, consumer insight, growth strategies
-    detail_fr: Marketing digital, connaissance client, stratégies de croissance
-  - degree_en: "Bachelor's in Sports Management"
-    degree_fr: "Licence Management du sport"
-    school: Université de Fourvière
-    domain: ""
-    badge: UF
-    location: Lyon, France
+    badge: EN
+    location: Lille, France
     dates: "2014 - 2017"
-    detail_en: ""
-    detail_fr: ""
-    # Shown instead of the empty detail when the CV is framed for sport (detail_<family>_<lang>).
-    detail_sport_en: "Thesis on fan engagement in French professional basketball"
-    detail_sport_fr: "Mémoire sur l'engagement des fans dans le basket professionnel français"
+    detail_en: Typography, layout, interactive design
+    detail_fr: Typographie, mise en page, design interactif
+    # Shown instead of the default detail when the CV is framed for health (detail_<family>_<lang>).
+    detail_health_en: "Final project: wayfinding and signage for a hospital"
+    detail_health_fr: "Projet de diplôme : signalétique d'un hôpital"
 
 certifications:
-  - Google Analytics Certification
-  - Google Ads Search Certification
-  - HubSpot Inbound Marketing
-  - Google Project Management Certificate
-  - Meta Certified Digital Marketing Associate
+  - Google UX Design Certificate
+  - Opquast certification (web quality and accessibility)
+  - Design sprint facilitation training
 # Added for the matching families only, so the line stays short.
 certifications_extra:
-  project_management: [Scrum Fundamentals Certified]
-  event: [Event Management Fundamentals]
+  accessibility: [RGAA 4 auditor training]
+  ux_research: [Qualitative research methods course]
 
 achievements_en:
-  - Finalist, regional marketing case competition 2021
-  - Head of communication, Lyon Student Sports Association (2016 - 2018)
-  - Host of the Courtside Talks podcast (30 episodes)
+  - Co-organiser of the Lyon UX Meetup since 2022
+  - Maintainer of Clair UI, a free accessible Figma kit
+  - Speaker at two regional design conferences on accessible health products
 achievements_fr:
-  - Finaliste, concours régional de cas marketing 2021
-  - Responsable communication, Lyon Student Sports Association (2016 - 2018)
-  - Animateur du podcast Courtside Talks (30 épisodes)
+  - Co-organisateur du Lyon UX Meetup depuis 2022
+  - Mainteneur de Clair UI, kit Figma accessible et gratuit
+  - Intervenant dans deux conférences design régionales sur les produits de santé accessibles

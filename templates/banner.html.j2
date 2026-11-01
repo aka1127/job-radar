@@ -2,10 +2,11 @@
 <html><head><meta charset="utf-8">
 <style>
 {# The picture that opens each job in Telegram, so jobs stand apart when scrolling the chat. Telegram shows it
-   about 300 px wide on a phone (a third of this canvas), so every text here is big; the details are in the card. #}
+   about 300 px wide on a phone (a third of this canvas), so every text here is big; the details are in the card.
+   Colors: the target company's (theme), or the brand's priority look (brand.priority) for the priority sector. #}
 {{ fonts }}
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { width: 900px; height: 300px; font-family: "Inter", "Segoe UI", Arial, sans-serif;
+body { width: 900px; height: 300px; font-family: "{{ font }}", "Segoe UI", Arial, sans-serif;
        font-variant-ligatures: none; }
 .banner { position: relative; overflow: hidden; width: 900px; height: 300px; display: flex; align-items: center;
           gap: 34px; padding: 0 42px; color: #fff;
@@ -27,20 +28,21 @@ body { width: 900px; height: 300px; font-family: "Inter", "Segoe UI", Arial, san
          flex-direction: column; align-items: center; justify-content: center;
          border: 7px solid rgba(255,255,255,.92); background: rgba(255,255,255,.1); }
 /* Jobs in the candidate's priority sector (config: priority): one fixed look, whatever the company's colors. */
-.banner.priority { background: linear-gradient(118deg, #14061f 0%, #4a0f5c 52%, #b0125f 100%); }
-.banner.priority::before { background: rgba(245,197,66,.13); }
-.banner.priority .tag { background: #f5c542; color: #2a0c33; }
+{% set pr = brand.priority %}
+.banner.priority { background: linear-gradient(118deg, {{ pr.gradient[0] }} 0%, {{ pr.gradient[1] }} 52%, {{ pr.gradient[2] }} 100%); }
+.banner.priority::before { background: {{ pr.tag }}22; }
+.banner.priority .tag { background: {{ pr.tag }}; color: {{ pr.tag_ink }}; }
 .banner.priority .tag svg { width: 24px; height: 24px; vertical-align: -3px; margin-right: 6px; }
-.banner.priority .score { border-color: #f5c542; }
+.banner.priority .score { border-color: {{ pr.tag }}; }
 .score b { font-size: 66px; font-weight: 800; line-height: 1; }
 .score span { font-size: 22px; font-weight: 800; letter-spacing: 2px; margin-top: 2px; opacity: .9; }
 </style></head>
 <body><div class="banner{{ ' priority' if priority else '' }}">
   <div class="logo">{% if logo %}<img src="{{ logo }}" alt="">{% else %}<span>{{ initials }}</span>{% endif %}</div>
   <div class="text">
-    <div class="tag">{% if priority and icon == 'music' %}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3v10.6A3.8 3.8 0 1 0 11 17V8h7V3z"/></svg>{% elif priority %}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"/></svg>{% endif %}{{ tag }}</div>
+    <div class="tag">{% if priority and icon_svg %}{{ icon_svg | safe }}{% endif %}{{ tag }}</div>
     <div class="company">{{ company }}</div>
     <div class="title">{{ title }}</div>
   </div>
-  <div class="score"><b>{{ score }}</b><span>FIT</span></div>
+  <div class="score"><b>{{ score }}</b><span>{{ fit_label }}</span></div>
 </div></body></html>

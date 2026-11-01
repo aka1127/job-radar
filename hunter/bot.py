@@ -1,38 +1,45 @@
 """Telegram side: setup, the Applied / Not for me buttons, and "send me any job link".
-Only the candidate's own chat is listened to."""
+Only the candidate's own chat is listened to. Every sentence comes from brand.text (config.yaml `texts:`)."""
 import html
 import json
 import logging
 import queue
 import re
+import sys
 import threading
 import time
 
-from .candidate import ROOT
+from .brand import text
+from .candidate import HOME
 from .notify import Telegram, buttons
 from .store import Store
 
 log = logging.getLogger(__name__)
 URL = re.compile(r"https?://\S+")
-HELP = ("Hi! I watch job boards and company career pages and send you a tailored CV, cover letter and "
-        "outreach messages for every good match.\n\n"
-        "• Tap <b>I applied</b> under a job to track it: a week later I send you the follow-up to copy.\n"
-        "• Then tap <b>Got an interview</b>, <b>Got an offer</b> or <b>Rejected</b>: it shows what works.\n"
-        "• Send me <b>any job link</b> and I build the pack for it.\n"
-        "• /status shows the numbers; a short summary comes every Monday.")
 STATUS = {"a": "applied", "x": "not_for_me", "f": "followed_up", "i": "interview", "r": "rejected", "o": "offer"}
 UNDO = {"applied": "sent", "not_for_me": "sent", "followed_up": "sent", "interview": "applied",
         "rejected": "applied", "offer": "interview"}  # one step back
-REPLY = {"applied": "Tracked ✅ A week from now you get the follow-up to send.", "not_for_me": "Got it, skipped.",
-         "followed_up": "Nice, follow-up logged.", "interview": "🎤 Well done! The interview prep is under the job.",
-         "rejected": "Logged. On to the next one.", "offer": "🎉 Congratulations!"}
 
 
 def set_env(key: str, value: str):
-    path = ROOT / ".env"
+    path = HOME / ".env"
     lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
     lines = [l for l in lines if not l.startswith(f"{key}=")] + [f"{key}={value}"]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _confirm(chat: dict) -> bool:
+    """The bot's username is public: whoever wrote to it last must be the person we mean. In a terminal, ask."""
+    who = chat.get("first_name") or chat.get("title") or chat.get("username") or "?"
+    handle = f"@{chat['username']}" if chat.get("username") else "no username"
+    if not sys.stdin.isatty():
+        print(f"Connecting {who} ({handle}, chat id {chat['id']}).")
+        return True
+    try:
+        answer = input(f"Connect {who} ({handle}, chat id {chat['id']})? [Y/n] ").strip().lower()
+    except EOFError:
+        return True
+    return answer in ("", "y", "yes", "o", "oui", "j", "ja", "s", "si", "sí")
 
 
 def setup(cand, wait_s: int = 300):
@@ -53,6 +60,10 @@ def setup(cand, wait_s: int = 300):
         chats = [u["message"]["chat"] for u in updates if "message" in u]
         if chats:
             chat = chats[-1]
+            tg.call("getUpdates", data={"offset": updates[-1]["update_id"] + 1})  # don't replay /start later
+            if not _confirm(chat):
+                print("Not connected. Press Start from the right phone, then run this again.")
+                return
             key = f"TELEGRAM_CHAT_ID_{cand.name.upper()}"
             if tg.chat and tg.chat != str(chat["id"]) and not cand.env("TELEGRAM_ADMIN_CHAT_ID"):
                 # Handing over (your test chat -> the candidate's phone): errors keep going to the previous chat.
@@ -60,8 +71,7 @@ def setup(cand, wait_s: int = 300):
                 print("The previous chat now gets error alerts (TELEGRAM_ADMIN_CHAT_ID in .env).")
             set_env(key, str(chat["id"]))
             tg.chat = str(chat["id"])
-            tg.send(f"✅ Connected. Job packs for <b>{html.escape(cand.full_name)}</b> will arrive here.\n\n{HELP}")
-            tg.call("getUpdates", data={"offset": updates[-1]["update_id"] + 1})  # don't replay /start later
+            tg.send(f"{text('connected', name=html.escape(cand.full_name))}\n\n{text('help')}")
             print(f"Connected to {chat.get('first_name') or chat.get('title')} (saved {key} in .env).")
             return
     print("No message received. Press Start in the bot chat, then run this again.")
@@ -98,36 +108,34 @@ def handle(cand, tg: Telegram, store: Store, u: dict, links: "queue.Queue[str]")
             if action == "u" and row["status"] == "rejected" and row["interview_at"]:
                 status = "interview"  # rejected after an interview: undo goes back to the interview
             store.set_status(row["id"], status)
-            tg.call("answerCallbackQuery", data={"callback_query_id": q["id"], "text": REPLY.get(status, "Undone.")})
+            reply = text(f"reply_{status}") if status != "sent" else text("reply_undone")
+            tg.call("answerCallbackQuery", data={"callback_query_id": q["id"], "text": reply})
             tg.call("editMessageReplyMarkup", data={"chat_id": tg.chat, "message_id": msg["message_id"],
                                                     "reply_markup": json.dumps(buttons(cb, status))})
         else:  # a button from before a reset, or the inert "Applied" label
             tg.call("answerCallbackQuery", data={"callback_query_id": q["id"],
-                                                 "text": "" if action == "noop" else "This job is no longer tracked."})
+                                                 "text": "" if action == "noop" else text("not_tracked")})
         return
     msg = u.get("message") or {}
     if str((msg.get("chat") or {}).get("id")) != tg.chat:
         return
-    text = msg.get("text") or ""
-    if text.startswith("/start") or text.startswith("/help"):
-        tg.send(HELP)
-    elif text.startswith("/status"):
+    body = msg.get("text") or ""
+    if body.startswith("/start") or body.startswith("/help"):
+        tg.send(text("help"))
+    elif body.startswith("/status"):
         from .llm import usage_by_day
         c = store.counts()
         today = (usage_by_day(1) or [{"calls": 0}])[0]
         applied = sum(c.get(s, 0) for s in ("applied", "followed_up", "interview", "rejected", "offer"))
         total = applied + sum(c.get(s, 0) for s in ("sent", "not_for_me", "undelivered"))
-        tg.send(f"📊 <b>Status</b>\n• Jobs sent to you: {total}\n• Applied: {applied}\n"
-                f"• Interviews: {c.get('interview', 0) + c.get('offer', 0)} · Offers: {c.get('offer', 0)} · "
-                f"Rejected: {c.get('rejected', 0)}\n• Not for me: {c.get('not_for_me', 0)}\n"
-                f"• Good matches waiting: {c.get('queued', 0)}\n"
-                f"• Career pages watched: {len(store.companies())}\n• Claude calls today: {today['calls']}")
-    elif URL.search(text):
-        url = URL.search(text).group(0)
-        links.put(url)
-        tg.send("On it: building the pack for this job. It takes a few minutes.")
+        tg.send(text("status", total=total, applied=applied, interviews=c.get("interview", 0) + c.get("offer", 0),
+                     offers=c.get("offer", 0), rejected=c.get("rejected", 0), not_for_me=c.get("not_for_me", 0),
+                     queued=c.get("queued", 0), companies=len(store.companies()), calls=today["calls"]))
+    elif URL.search(body):
+        links.put(URL.search(body).group(0))
+        tg.send(text("on_it"))
     else:
-        tg.send("Send me a job link, or /status.")
+        tg.send(text("send_link"))
 
 
 def worker(cand, links: "queue.Queue[str]", stop: threading.Event):
@@ -143,6 +151,6 @@ def worker(cand, links: "queue.Queue[str]", stop: threading.Event):
             note = apply_to(cand, url)
         except Exception as e:
             log.exception("link pack failed")
-            note = f"Sorry, that one failed: {e}"
-        if note.startswith("Could not") or note.startswith("Sorry"):
+            note = text("link_failed", error=e)
+        if note.startswith("Could not") or note.startswith("Sorry") or note == text("link_unreadable"):
             tg.send(html.escape(note))

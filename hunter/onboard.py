@@ -14,16 +14,16 @@ from pathlib import Path
 import yaml
 
 from . import geo
-from .candidate import CANDIDATES, ROOT, load_yaml
+from .candidate import CANDIDATES, EXAMPLE, RESERVED, ROOT, load_yaml
 from .i18n import LABELS
 from .targets import CONTRACTS
 
-EXAMPLE = CANDIDATES / "example"  # the format both files follow
+CV_TYPES = {".pdf", ".docx", ".txt", ".md"}
 
 # (key, question, example answer, required). Asked in this order; the country comes first.
 QUESTIONS = [
     ("country", "Which country do you want to work in?", "France, Germany, United Kingdom, US, Morocco...", True),
-    ("home", "Which city do you live in, or want to work around?", "Lyon", True),
+    ("home", "Which city do you live in, or want to work around? (a city of 15,000+ people)", "Lyon", True),
     ("radius_km", "How far can you travel to work, in km?", "40", False),
     ("relocation", "Would you move for the right job? Where to?", "yes, Paris or Bordeaux / no", False),
     ("remote", "Remote, hybrid or on-site?", "any / remote only / hybrid ok", False),
@@ -39,6 +39,8 @@ QUESTIONS = [
     ("work_permit", "Are you allowed to work in that country?", "citizen / work permit / need sponsorship", False),
     ("languages", "Which languages do you speak, and how well?", "French native, English C1, Spanish B2", True),
     ("cv_languages", "In which languages should your CVs be written? (codes)", "en, fr", False),
+    ("gender_titles", "In languages that gender job titles (German, French, Spanish, Italian, Portuguese), which form "
+                      "should your CVs use?", "feminine / masculine / neutral / as my CV writes them", False),
     ("proud", "Two or three results you are proud of, with numbers if you have them", "cut reporting time by 40%", False),
     ("links", "Links to show (LinkedIn, portfolio, GitHub...)", "https://linkedin.com/in/...", False),
     ("packs_per_day", "How many tailored applications can you act on per day?", "10", False),
@@ -53,7 +55,11 @@ CONFIG_KEYS = ["country", "home", "home_label", "home_radius_km", "cv_languages"
 
 def cv_text(path: Path) -> str:
     """The CV as plain text: PDF and Word files are read like an ATS reads them."""
+    if not path.is_file():
+        raise SystemExit(f"CV not found: {path}")
     suffix = path.suffix.lower()
+    if suffix not in CV_TYPES:
+        raise SystemExit(f"{path.name}: the CV must be a .pdf, .docx or .txt file (save a .doc or .odt as .docx).")
     if suffix == ".pdf":
         from .ats import pdf_text
         text = pdf_text(path)[0]
@@ -71,19 +77,28 @@ def _interactive() -> bool:
     return sys.stdin.isatty()
 
 
+NO_TERMINAL = "No terminal to ask the questions: pass --answers answers.yaml (see docs/onboarding-answers.example.yaml)."
+
+
+def _input(prompt: str) -> str:
+    try:
+        return input(prompt).strip()
+    except EOFError:  # stdin closed or redirected although isatty() said otherwise (Windows NUL)
+        raise SystemExit(NO_TERMINAL) from None
+
+
 def ask(answers_file: Path | None) -> dict:
     """The person's wishes, from a YAML file or asked one by one (Enter skips an optional question)."""
     if answers_file:
         answers = {k: str(v) for k, v in (load_yaml(answers_file) or {}).items() if v not in (None, "")}
     elif not _interactive():
-        raise SystemExit("No terminal to ask the questions: pass --answers answers.yaml "
-                         "(see docs/onboarding-answers.example.yaml).")
+        raise SystemExit(NO_TERMINAL)
     else:
         print("A few questions first (Enter skips the optional ones).\n")
         answers = {}
         for key, question, example, required in QUESTIONS:
             while True:
-                value = input(f"{question}{'' if required else ' (optional)'}\n  e.g. {example}\n> ").strip()
+                value = _input(f"{question}{'' if required else ' (optional)'}\n  e.g. {example}\n> ")
                 if key == "country" and value and not geo.country_code(value):
                     print("  I do not know that country; try its English name or its code (FR, DE, US).")
                     continue
@@ -106,10 +121,25 @@ def follow_up(questions: list[str]) -> list[tuple[str, str]]:
     print(f"\n{len(questions)} questions about your CV (Enter skips one; the more numbers, the stronger the CVs).\n")
     out = []
     for q in questions:
-        a = input(f"{q}\n> ").strip()
+        a = _input(f"{q}\n> ")
         if a:
             out.append((q, a))
     return out
+
+
+def conditions_leak(profile: dict, answers: dict) -> list[str]:
+    """The salary floor is a condition, not a fact: it belongs to config.yaml and must never reach a CV or letter
+    (the whole profile is given to every writing step)."""
+    salary = answers.get("salary") or ""
+    digits = re.sub(r"\D", "", salary.split(".")[0])
+    if len(digits) < 4:
+        return []
+    n = int(digits)  # only the prose parts: a metric may share digits with the salary by chance
+    text = _dump({k: profile.get(k) for k in ("positioning", "writing_notes", "other_facts") if profile.get(k)})
+    forms = {digits, salary.strip(), f"{n:,}", f"{n // 1000} {n % 1000:03d}", f"{n // 1000}k", f"{n // 1000}K"}
+    if any(v and v in text for v in forms):
+        return [f"the salary floor ({salary}) must not appear in the profile (it belongs to the search settings)"]
+    return []
 
 
 def _yaml_of(text: str) -> dict:
@@ -170,6 +200,10 @@ def check_config(c: dict) -> list[str]:
         problems.append("priority.family must be one of the families")
     if not (c.get("locations") and all("query" in l and l.get("tier") in (1, 2) for l in c["locations"])):
         problems.append("locations need a query and a tier (1 or 2)")
+    for key, bars in (("min_score", c.get("min_score")), ("priority.min_score", (c.get("priority") or {}).get("min_score"))):
+        if bars is not None and not (isinstance(bars, dict) and bars and all(
+                str(k) in ("1", "2") and isinstance(v, int) for k, v in bars.items())):
+            problems.append(f"{key} must look like {{1: 55, 2: 65}} (a score bar per tier)")
     if not all(str(d).isalnum() for d in c.get("home_departments") or []):
         problems.append("home_departments are French department codes like '69' or '2A'")
     if not problems:
@@ -230,6 +264,11 @@ RULES:
 - writing_notes: 4-8 rules for writing this person's CVs and letters (how to present the main experiences, the
   years of experience wording, what never to claim, how to explain gaps or changes of field).
 - positioning: 4-6 lines: who they are, years, field, strongest proofs, targets from the answers.
+- Conditions are not facts: the salary floor, contracts, schedule, remote and relocation wishes and the employers
+  or roles to avoid never go into the profile (not in other_facts, not in positioning); they belong to the search
+  settings written next.
+- Gendered job titles (German, French, Spanish, Italian, Portuguese): use the form the answers give under
+  gender_titles; without it keep the forms the CV itself uses, and never infer a gender from the first name.
 - Add a top-level key onboarding_questions: 6-12 short questions that would make the CV stronger: numbers behind
   results, tools to confirm, unclear dates or titles, gaps, what they did in projects.
 
@@ -324,6 +363,8 @@ def onboard(name: str, cv_path: Path, answers_file: Path | None = None, force: b
 
     if not re.fullmatch(r"[a-z][a-z0-9_-]{1,30}", name):
         raise SystemExit("The name is a folder name: lowercase letters, digits, - or _ (e.g. alex).")
+    if name in RESERVED:
+        raise SystemExit(f"'{name}' is reserved by the engine; pick another folder name (e.g. your first name).")
     folder = root / name
     if folder.exists() and not force:
         raise SystemExit(f"candidates/{name} already exists (use --force to write over it).")
@@ -331,14 +372,17 @@ def onboard(name: str, cv_path: Path, answers_file: Path | None = None, force: b
     answers = ask(answers_file)
     cc = ClaudeCode(load_yaml(ROOT / "config.yaml")["claude"])
     example_profile = (EXAMPLE / "profile.yaml").read_text(encoding="utf-8")
+
+    def profile_ok(p: dict) -> list[str]:
+        return check_profile(p) + conditions_leak(p, answers)
     print("Reading the CV with your answers (a minute or two)...")
-    profile = _ask_claude(cc, "onboard", profile_prompt(text, answers, example_profile), check_profile)
+    profile = _ask_claude(cc, "onboard", profile_prompt(text, answers, example_profile), profile_ok)
     questions = [str(q) for q in profile.pop("onboarding_questions", []) or []]
     if questions and not answers_file and _interactive():
         answered = follow_up(questions)
         if answered:
             print("Adding your answers to the profile...")
-            profile = _ask_claude(cc, "onboard", update_prompt(profile, answered, example_profile), check_profile)
+            profile = _ask_claude(cc, "onboard", update_prompt(profile, answered, example_profile), profile_ok)
             profile.pop("onboarding_questions", None)
             asked = {q for q, _ in answered}
             questions = [q for q in questions if q not in asked]
@@ -346,6 +390,10 @@ def onboard(name: str, cv_path: Path, answers_file: Path | None = None, force: b
     config = _ask_claude(cc, "onboard", config_prompt(profile, answers, (EXAMPLE / "config.yaml").read_text(
         encoding="utf-8")), check_config)
     config["country"] = answers["country_code"]
+    home = str(config.get("home") or "").split(",")[0].strip()
+    if home and not geo.home_known(home, config["country"]):
+        print(f"Note: '{home}' is not a city GeoNames knows (15,000+ people), so home_radius_km would cover nothing "
+              "but that name. In config.yaml put the nearest bigger city in `home` (home_label can stay as it is).")
     folder.mkdir(parents=True, exist_ok=True)
     head = f"# Written by `python -m hunter onboard` from {cv_path.name}. Check every line: it is the only source of facts.\n"
     (folder / "profile.yaml").write_text(head + _dump(profile), encoding="utf-8")

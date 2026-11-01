@@ -9,10 +9,17 @@ from docx.enum.text import WD_LINE_SPACING
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
+from .brand import brand
 from .candidate import Candidate
 from .render import LABELS, assemble
 
-INK, ACCENT, MUTED = RGBColor(0x12, 0x1A, 0x2B), RGBColor(0x1B, 0x3E, 0x99), RGBColor(0x5A, 0x64, 0x78)
+INK, MUTED = RGBColor(0x12, 0x1A, 0x2B), RGBColor(0x5A, 0x64, 0x78)
+
+
+def _accent() -> RGBColor:
+    """The brand's darker accent (headings, the headline), as the designed CV uses it."""
+    hex6 = brand()["accent_ink"].lstrip("#")
+    return RGBColor(int(hex6[0:2], 16), int(hex6[2:4], 16), int(hex6[4:6], 16))
 
 
 def _runs(par, text: str, size: float = 10.5, color: RGBColor = INK, bold: bool = False):
@@ -37,7 +44,7 @@ def _heading(doc, text: str):
     h = doc.add_heading(level=1)
     h.paragraph_format.space_before, h.paragraph_format.space_after = Pt(10), Pt(3)
     run = h.add_run(text.upper())
-    run.font.size, run.font.color.rgb, run.bold, run.font.name = Pt(11.5), ACCENT, True, "Calibri"
+    run.font.size, run.font.color.rgb, run.bold, run.font.name = Pt(11.5), _accent(), True, "Calibri"
 
 
 def cv_docx(content: dict, cand: Candidate, out: Path) -> Path:
@@ -54,7 +61,7 @@ def cv_docx(content: dict, cand: Candidate, out: Path) -> Path:
 
     # Contact details in the body: parsers often skip Word headers and footers.
     _par(doc, p["name"], 20, INK, True, 2)
-    _par(doc, c["headline"], 11.5, ACCENT, True, 3)
+    _par(doc, c["headline"], 11.5, _accent(), True, 3)
     linkedin = p.get("linkedin_url") or p.get("linkedin_label", "")
     portfolio = p.get("portfolio_url", "") if c["portfolio"] else ""
     _par(doc, " | ".join(x for x in (p["phone"], p["email"], p["location"], linkedin, portfolio) if x), 10, MUTED,

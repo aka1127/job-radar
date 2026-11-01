@@ -12,10 +12,11 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image, ImageDraw, ImageFont
 
+from .brand import brand
+from .web import UA
+
 log = logging.getLogger(__name__)
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130 Safari/537.36"}
 SIZE = 128
-BADGE_COLOR = "#1e3a8a"  # one navy for every monogram, so they sit well next to real logos
 
 
 def _image(data: bytes) -> Image.Image | None:
@@ -82,26 +83,38 @@ def _square(img: Image.Image) -> Image.Image:
     return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 
-def monogram(name: str, text: str = "") -> Image.Image:
+def _badge_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """A bold font for the initials: the brand font shipped in assets/fonts is woff2 (not for Pillow), so a system
+    bold face is used, whatever the platform, else Pillow's own scalable default."""
+    for f in ("seguisb.ttf", "segoeuib.ttf", "arialbd.ttf", "Arial Bold.ttf", "DejaVuSans-Bold.ttf",
+              "LiberationSans-Bold.ttf", "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+              "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+        try:
+            return ImageFont.truetype(f, size)
+        except OSError:
+            continue
+    try:
+        return ImageFont.load_default(size=size)  # Pillow >= 10.1 scales its built-in font
+    except TypeError:
+        return ImageFont.load_default()
+
+
+def monogram(name: str, text: str = "", color: str | None = None) -> Image.Image:
+    """A rounded badge with the initials, in the brand's badge color, so it sits well next to real logos."""
     words = [w for w in re.split(r"[\s&-]+", name) if w and w[0].isalnum()]
     initials = (text or "".join(w[0] for w in words[:2]) or "?").upper()
     img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle((0, 0, SIZE - 1, SIZE - 1), radius=28, fill=BADGE_COLOR)
-    font = None
-    for f in ("seguisb.ttf", "segoeuib.ttf", "arialbd.ttf", "DejaVuSans-Bold.ttf"):
-        try:
-            font = ImageFont.truetype(f, {1: 78, 2: 66, 3: 50, 4: 38}.get(len(initials), 30))
-            break
-        except OSError:
-            continue
-    draw.text((SIZE / 2, SIZE / 2), initials, fill="white", font=font or ImageFont.load_default(), anchor="mm")
+    draw.rounded_rectangle((0, 0, SIZE - 1, SIZE - 1), radius=28, fill=color or brand()["badge"])
+    font = _badge_font({1: 78, 2: 66, 3: 50, 4: 38}.get(len(initials), 30))
+    draw.text((SIZE / 2, SIZE / 2), initials, fill="white", font=font, anchor="mm")
     return img
 
 
-def ensure(folder: Path, key: str, name: str, domain: str, badge: str = "", monogram_ok: bool = True) -> Path | None:
+def ensure(folder: Path, key: str, name: str, domain: str, badge: str = "", monogram_ok: bool = True,
+           color: str | None = None) -> Path | None:
     """Return the logo file for an employer or school, fetching or drawing it once.
-    monogram_ok=False: a real logo or None (used for the company being applied to)."""
+    monogram_ok=False: a real logo or None (used for the company being applied to). color: the badge color."""
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{key}.png"
     if path.exists():
@@ -120,7 +133,7 @@ def ensure(folder: Path, key: str, name: str, domain: str, badge: str = "", mono
             (folder / f"{key}.none").touch()  # remembered: don't refetch on every pack
             return None
         log.info("no usable logo for %s, drawing a monogram", name)
-        img = monogram(name, badge)
+        img = monogram(name, badge, color)
     img.save(path, "PNG", optimize=True)
     return path
 
@@ -145,9 +158,7 @@ def _svg_to_png(svg: bytes, bg: str = "") -> Image.Image:
 def from_url(url: str, bg: str = "") -> Image.Image | None:
     """A logo file named in the profile (PNG, JPG, ICO or SVG)."""
     try:
-        # Wikimedia asks bots for an identifying user agent and rate-limits browser-looking ones.
-        agent = "JobSearchLogos/1.0 (personal CV tool; python-requests)" if "wikimedia.org" in url else UA["User-Agent"]
-        r = requests.get(url, headers={"User-Agent": agent}, timeout=25)
+        r = requests.get(url, headers=UA, timeout=25)  # the honest crawler agent Wikimedia and others ask for
         r.raise_for_status()
     except requests.RequestException as e:
         log.warning("logo %s unreachable: %s", url, e)
@@ -189,7 +200,7 @@ def refresh(cand, force: bool = False) -> list[str]:
             img = stack(*parts[:2]) if len(parts) == 2 else (parts[0] if parts else None)
         path.unlink(missing_ok=True)
         if img is None:
-            path = ensure(folder, key, name, e.get("domain", ""), e.get("badge", ""))
+            path = ensure(folder, key, name, e.get("domain", ""), e.get("badge", ""), color=brand()["badge"])
         else:
             img.save(path, "PNG", optimize=True)
         done.append(f"{key}: {'logo file' if img is not None else 'site icon or monogram'}")

@@ -26,7 +26,7 @@ def now() -> str:
 
 GENERIC = {"france", "fr", "group", "groupe", "sa", "sas", "sasu", "sarl", "inc", "ltd", "llc", "gmbh", "holding",
            "paris", "the", "co", "company", "corp", "ag", "bv", "nv", "plc", "spa", "srl"}
-KEY_VERSION = "2"
+KEY_VERSION = "3"  # bump when fold() or dedupe_key() changes: stored keys are recomputed at the next start
 # Jobs that reached the person, whatever happened next.
 DELIVERED = ("sent", "undelivered", "applied", "followed_up", "not_for_me", "interview", "rejected", "offer")
 
@@ -66,12 +66,6 @@ class Store:
             for r in self.db.execute("select id, job from jobs").fetchall():
                 self.db.execute("update jobs set key=? where id=?", (dedupe_key(json.loads(r["job"])), r["id"]))
             self.put("key_version", KEY_VERSION)
-        if self.get("fit_version") != "2":  # scores from before the engine was generic: music_sector, paris_region
-            for r in self.db.execute("select id, data from jobs where data like '%music_sector%' "
-                                     "or data like '%paris_region%'").fetchall():
-                data = r["data"].replace('"music_sector"', '"priority_sector"').replace('"paris_region"', '"home_region"')
-                self.db.execute("update jobs set data=? where id=?", (data, r["id"]))
-            self.put("fit_version", "2")
 
     # jobs ---------------------------------------------------------------
     def is_new(self, job: dict) -> bool:

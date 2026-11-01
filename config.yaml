@@ -1,6 +1,28 @@
 # Engine defaults for every candidate. candidates/<name>/config.yaml overrides any key (and holds everything about
 # the person: country, home, targets, searches, filters). docs/configuration.md lists every key.
 
+# The look and the words of the product, in one place (defaults in hunter/brand.py). Change them here to rebrand.
+brand:
+  name: Job Radar
+  accent: "#2453c9"        # CV and letter accent when the target company gives no color
+  accent_ink: "#1b3e99"    # darker accent: employer names, dates, Word headings
+  soft: "#f2f5fb"          # tinted backgrounds: header band, tiles
+  badge: "#1e3a8a"         # monogram badges for employers and schools without a logo
+  font: Inter              # family name of the woff2 files in assets/fonts (drop other files there to change it)
+  priority:                # the Telegram header of a job in the priority sector, whatever the company's colors
+    gradient: ["#14061f", "#4a0f5c", "#b0125f"]
+    tag: "#f5c542"
+    tag_ink: "#2a0c33"
+# texts: every sentence the person reads in Telegram, by key (the keys and English defaults are in hunter/brand.py).
+# Uncomment and translate or reword the ones you want, keeping the {placeholders}:
+# texts:
+#   btn_applied: "✅ J'ai postulé"
+#   help: "Bonjour ! Je surveille les offres et t'envoie un CV adapté pour chaque bonne annonce..."
+
+# How the crawler introduces itself to the sites it reads (robots.txt is checked before any page is opened).
+crawl:
+  user_agent: "Mozilla/5.0 (compatible; JobRadar/1.0; +https://github.com/aka1127/job-radar)"
+
 # AI runs through the Claude Code CLI on your own Claude account (no API key).
 claude:
   models: {onboard: opus, triage: sonnet, score: opus, pack: opus, screen: opus, revise: opus, brief: opus, discover: opus, extract: opus}

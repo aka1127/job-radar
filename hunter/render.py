@@ -14,8 +14,11 @@ from markupsafe import Markup, escape
 from playwright.sync_api import sync_playwright
 from pypdf import PdfReader
 
+from functools import lru_cache
+
 from . import logos, targets
 from .ats import role_title
+from .brand import brand, text, theme
 from .candidate import ROOT, Candidate
 from .i18n import LABELS, date_line, field
 from .text import display_title, local_dates
@@ -46,9 +49,6 @@ def unbold(text: str) -> str:
     return str(text or "").replace("**", "")
 
 
-DEFAULT_THEME = {"accent": "#2453c9", "accent_ink": "#1b3e99", "soft": "#f2f5fb"}
-
-
 def _luminance(rgb: tuple) -> float:
     lin = [c / 255 / 12.92 if c / 255 <= 0.03928 else ((c / 255 + 0.055) / 1.055) ** 2.4 for c in rgb]
     return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
@@ -56,9 +56,9 @@ def _luminance(rgb: tuple) -> float:
 
 def theme_for(color: str | None) -> dict:
     """The target company's brand color as the CV accent, darkened until text on white stays readable
-    (WCAG contrast 4.5:1 for accents, about 8:1 for the darker ink). Default blue when there is none."""
+    (WCAG contrast 4.5:1 for accents, about 8:1 for the darker ink). The brand's own palette when there is none."""
     if not color or not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
-        return DEFAULT_THEME
+        return theme()
     rgb = tuple(int(color[i:i + 2], 16) for i in (1, 3, 5))
 
     def darker(limit: float) -> str:
@@ -74,17 +74,22 @@ def theme_for(color: str | None) -> dict:
 _env.filters["bold"] = _bold
 
 
-def _fonts_css() -> str:
+@lru_cache(maxsize=4)
+def fonts_css(family: str) -> str:
+    """@font-face rules embedding assets/fonts/*.woff2 under the brand's family name."""
     rules = []
     for woff in sorted((ROOT / "assets" / "fonts").glob("*.woff2")):
         rng = woff.with_suffix(".range").read_text().strip()
         data = base64.b64encode(woff.read_bytes()).decode()
-        rules.append(f'@font-face {{ font-family: "Inter"; font-weight: 400 800; font-display: block; '
+        rules.append(f'@font-face {{ font-family: "{family}"; font-weight: 400 800; font-display: block; '
                      f'src: url(data:font/woff2;base64,{data}) format("woff2"); unicode-range: {rng}; }}')
     return "\n".join(rules)
 
 
-FONTS = _fonts_css()
+def _look() -> dict:
+    """What every template gets about the brand: the embedded fonts and the family name."""
+    family = brand()["font"]
+    return {"fonts": fonts_css(family), "font": family, "brand": brand()}
 
 
 def place(s: str, lang: str) -> str:
@@ -111,6 +116,27 @@ ICONS = {
     "star": _ICON.format('<path d="M8 2.2l1.8 3.8 4 .5-3 2.8.8 4L8 11.4l-3.6 1.9.8-4-3-2.8 4-.5z"/>'),
 }
 DEFAULT_ICONS = ["briefcase", "globe", "chat", "check"]
+
+# The mark on the priority tag of the Telegram header (config: priority.icon), filled, 24 px.
+_MARK = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{}"/></svg>'
+BANNER_ICONS = {
+    "star": _MARK.format("M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"),
+    "music": _MARK.format("M9 3v10.6A3.8 3.8 0 1 0 11 17V8h7V3z"),
+    "heart": _MARK.format("M12 21s-7.5-4.6-9.5-9A5.4 5.4 0 0 1 12 6a5.4 5.4 0 0 1 9.5 6c-2 4.4-9.5 9-9.5 9z"),
+    "health": _MARK.format("M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"),
+    "bolt": _MARK.format("M13 2 3 14h7l-1 8 10-12h-7z"),
+    "leaf": _MARK.format("M20 4c-8 0-14 4-14 12 0 2 .5 3 .5 3S8 16 14 12c-4 4-5 8-5 8s3-1 6-4c3-3 5-8 5-12z"),
+    "briefcase": _MARK.format("M9 4h6v2h5v13H4V6h5zm2 0v2h2V4z"),
+    "flag": _MARK.format("M5 3h2v18H5zm3 1h11l-3 4 3 4H8z"),
+    "pin": _MARK.format("M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"),
+    "shield": _MARK.format("M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z"),
+    "globe": _MARK.format("M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 9h-3a15 15 0 0 0-1.2-5.2A8 8 0 0 1 18.9 11z"
+                          "M12 4a13 13 0 0 1 1.9 7h-3.8A13 13 0 0 1 12 4zM5.1 13h3a15 15 0 0 0 1.2 5.2A8 8 0 0 1 5.1 13z"
+                          "m3-2h-3a8 8 0 0 1 4.2-5.2A15 15 0 0 0 8.1 11zM12 20a13 13 0 0 1-1.9-7h3.8A13 13 0 0 1 12 20z"
+                          "m2.7-1.8A15 15 0 0 0 15.9 13h3a8 8 0 0 1-4.2 5.2z"),
+    "trophy": _MARK.format("M6 3h12v3h3v2a5 5 0 0 1-4.3 5A6 6 0 0 1 13 16v2h3v3H8v-3h3v-2a6 6 0 0 1-3.7-3A5 5 0 0 1 3 8V6h3z"
+                           "M5 8a3 3 0 0 0 1.3 2.5A9 9 0 0 1 6 8zm13 0a9 9 0 0 1-.3 2.5A3 3 0 0 0 19 8z"),
+}
 
 
 def _dots(level: str) -> int:
@@ -139,11 +165,12 @@ def assemble(content: dict, cand: Candidate) -> tuple[dict, str]:
     folder = cand.dir / "logos"
     by_id = {e["id"]: e for e in p["experience"]}
     experience = []
+    badge_color = brand()["badge"]
     for item in content["experience"]:
         e = by_id.get(item["id"])
         if not e:
             continue
-        logo = logos.ensure(folder, e["id"], e["company"], e.get("domain", ""), e.get("badge", ""))
+        logo = logos.ensure(folder, e["id"], e["company"], e.get("domain", ""), e.get("badge", ""), color=badge_color)
         title = (item.get("alt_title") and field(e, "title_alt", lang)) or field(e, "title", lang)
         split = re.match(r"(.*?)\s*\(([^()]+)\)\s*$", title)  # "Analyste (alternance)" for strict parsers
         experience.append(dict(title=title, title_plain=split.group(1) if split else title,
@@ -153,7 +180,7 @@ def assemble(content: dict, cand: Candidate) -> tuple[dict, str]:
                                bullets=item.get("bullets", []), logo=logos.data_uri(logo)))
     education = []
     for i, e in enumerate(p["education"]):
-        logo = logos.ensure(folder, f"edu-{i}", e["school"], e.get("domain", ""), e.get("badge", ""))
+        logo = logos.ensure(folder, f"edu-{i}", e["school"], e.get("domain", ""), e.get("badge", ""), color=badge_color)
         education.append(dict(degree=field(e, "degree", lang), school=e["school"], location=place(e["location"], lang),
                               dates=local_dates(e, lang), logo=logos.data_uri(logo),
                               detail=(framing and e.get(f"detail_{framing}_{lang}")) or field(e, "detail", lang)))
@@ -180,9 +207,9 @@ def html_for(content: dict, cand: Candidate, scale: float = 1.0, plain: bool = F
     """plain=True: no logos, icons, photo or tinted band, for strict corporate ATS portals."""
     c, lang = assemble(content, cand)
     return _env.get_template("cv.html.j2").render(c=c, p=cand.profile["identity"], L=LABELS[lang], lang=lang,
-                                                  scale=scale, fonts=FONTS, photo=_photo(cand), plain=plain,
-                                                  show_portfolio=c["portfolio"],
-                                                  theme=DEFAULT_THEME if plain else theme_for((c["target"] or {}).get("color")))
+                                                  scale=scale, photo=_photo(cand), plain=plain,
+                                                  show_portfolio=c["portfolio"], **_look(),
+                                                  theme=theme() if plain else theme_for((c["target"] or {}).get("color")))
 
 
 def letter_html(letter: str, job: dict, headline: str, cand: Candidate, lang: str, scale: float = 1.0,
@@ -191,7 +218,7 @@ def letter_html(letter: str, job: dict, headline: str, cand: Candidate, lang: st
     when = date_line(cand.profile['identity']['location'].split(',')[0], lang, today)
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", letter.strip()) if p.strip()]
     return _env.get_template("letter.html.j2").render(
-        p=cand.profile["identity"], L=LABELS[lang], lang=lang, scale=scale, fonts=FONTS, photo="", plain=False,
+        p=cand.profile["identity"], L=LABELS[lang], lang=lang, scale=scale, photo="", plain=False, **_look(),
         theme=theme_for(color), show_portfolio=framing in _cv_families(cand, "portfolio_families"),
         headline=headline, company=job["company"], title=display_title(job["title"]), place_date=when,
         paragraphs=paragraphs)
@@ -199,20 +226,20 @@ def letter_html(letter: str, job: dict, headline: str, cand: Candidate, lang: st
 
 def banner_html(job: dict, fit: dict, target: dict | None, cfg: dict | None = None) -> str:
     """Telegram header for one job: the company's brand color and logo, its name, the role and the fit score.
-    A job in the candidate's priority sector gets one fixed, distinct look instead of the company's colors."""
+    A job in the candidate's priority sector gets the brand's priority look instead of the company's colors."""
     target, cfg = target or {}, cfg or {}
     logo = Path(target["logo"]) if target.get("logo") else None
     words = [w for w in re.split(r"[\s&'.-]+", job["company"]) if w[:1].isalnum()]
     size = len(job["company"])
     p = targets.priority(cfg) if targets.is_priority(fit, cfg) else {}
-    tag = (f"{p.get('tag') or 'PRIORITY'} · PRIORITY" if p else "YOUR LINK" if job["id"].startswith("link:")
-           else "NEW JOB")
+    tag = (text("tag_priority", tag=p.get("tag") or "PRIORITY") if p
+           else text("tag_link") if job["id"].startswith("link:") else text("tag_new"))
     return _env.get_template("banner.html.j2").render(
-        fonts=FONTS, theme=theme_for(target.get("color")), company=job["company"] or "?",
+        theme=theme_for(target.get("color")), company=job["company"] or "?", **_look(),
         company_px=70 if size <= 9 else 56 if size <= 14 else 44,
-        title=display_title(role_title(job["title"], job["company"])), score=fit["score"],
-        priority=bool(p), icon=p.get("icon", ""), tag=tag,
-        logo=logos.data_uri(logo) if logo and logo.exists() else "",
+        title=display_title(role_title(job["title"], job["company"])), score=fit["score"], fit_label=text("fit"),
+        priority=bool(p), icon_svg=BANNER_ICONS.get(str(p.get("icon") or "star"), BANNER_ICONS["star"]) if p else "",
+        tag=tag, logo=logos.data_uri(logo) if logo and logo.exists() else "",
         initials="".join(w[0] for w in words[:2]).upper() or "?")
 
 

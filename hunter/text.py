@@ -6,10 +6,15 @@ from . import i18n
 
 # Applied after fold(): "(F/H/X)" has become "f h x".
 TITLE_NOISE = r"\b[hfmwdx]( [hfmwdx]){1,2}\b|\b(cdi|cdd|stage|freelance|full remote|remote|hybride?|teletravail)\b"
+# Letters that NFKD cannot reduce to ASCII (they would just vanish: "København" -> "kbenhavn").
+_TRANSLIT = str.maketrans({"ø": "o", "Ø": "O", "ł": "l", "Ł": "L", "đ": "d", "Đ": "D", "ß": "ss", "ẞ": "SS",
+                           "æ": "ae", "Æ": "AE", "œ": "oe", "Œ": "OE", "þ": "th", "Þ": "TH", "ð": "d", "Ð": "D",
+                           "ı": "i", "ħ": "h", "Ħ": "H", "ŧ": "t", "Ŧ": "T", "ŋ": "n", "Ŋ": "N"})
+
 
 def fold(s: str) -> str:
     """Lowercase, no accents, words separated by single spaces, padded so ' seo ' matches whole words."""
-    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
+    s = unicodedata.normalize("NFKD", (s or "").translate(_TRANSLIT)).encode("ascii", "ignore").decode().lower()
     return " " + re.sub(r"[^a-z0-9+#]+", " ", s).strip() + " "
 
 

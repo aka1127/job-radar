@@ -31,7 +31,7 @@ def test_countries_are_understood_in_any_spelling():
 def test_cv_languages_follow_the_country_unless_the_config_says():
     assert targets.cv_languages({"country": "DE"}) == ["en", "de"]
     assert targets.cv_languages({"country": "FR", "cv_languages": ["fr", "en"]}) == ["fr", "en"]
-    assert targets.cv_languages({"country": "MA"}) == ["en"]  # Arabic CVs are not supported yet: English
+    assert targets.cv_languages({"country": "MA"}) == ["en", "fr"]  # no Arabic CVs yet: French, the next language there
     assert i18n.output_language("de", ["en", "de"]) == "de" and i18n.output_language("ja", ["fr", "de"]) == "fr"
 
 
@@ -89,7 +89,7 @@ def test_a_german_cv_reads_like_a_german_one(renderer, cand, cv_en, tmp_path):
     pages, _ = renderer.cv_pdf(cv, cand, pdf)
     res = ats.check(pdf, [], cv["headline"].split(" | ")[0], "de", cand, max_pages=2, ids=[x["id"] for x in cv["experience"]])
     assert res["sections_ok"] and "BERUFSERFAHRUNG" in res["text"] and "KERNKOMPETENZEN" in res["text"]
-    assert "Sept. 2023 - Dez. 2024" in res["text"] and not [i for i in res["issues"] if "parse" in i], res["issues"]
+    assert "Sept. 2021 - Jan. 2024" in res["text"] and not [i for i in res["issues"] if "parse" in i], res["issues"]
     letter = tmp_path / "letter.pdf"
     renderer.letter_pdf("Sehr geehrte Damen und Herren,\n\nText.\n\nMit freundlichen Grüßen", {"title": "Analyst",
                         "company": "A"}, "Analyst", cand, "de", letter)

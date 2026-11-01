@@ -22,3 +22,10 @@ candidates/example/cv/
 .claude/settings.local.json
 .vscode/
 .idea/
+
+# Virtual environments and OS files
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+*.egg-info/

@@ -1,121 +1,43 @@
 {
-  "headline": "Growth Marketer | Paid acquisition, experimentation & marketing automation",
-  "summary": "Digital marketer with 5+ years of experience across 3 countries, B2B and B2C, covering growth levers: paid acquisition (Google Ads, Meta Ads), SEO, A/B test experiments and CRM automation. Uses ChatGPT daily.",
+  "headline": "Product Designer | Patient and clinician products, design systems, accessibility",
+  "summary": "Product designer with 8+ years of experience, from a Lille web agency to a Lyon health-tech scale-up: research, flows and prototypes, a design system used by 4 squads, and 3 products brought to WCAG 2.1 AA. Bilingual FR/EN.",
   "strengths": [
-    "**End-to-end project ownership**: scoping, KPI tracking and decision-ready Power BI reporting at Velora Mobility",
-    "**Paid acquisition and experiments**: Google Ads acquisition and email A/B tests at Bocado",
-    "**Stakeholder management**: coordinated business, design and development teams on the platform launch at Portside Logistics"
+    "**Research to handoff**: patient portal and clinician app designed end to end at Hexalab Santé",
+    "**Design systems**: Pulse, from tokens to Storybook documentation, used by 4 product squads at Hexalab Santé",
+    "**Measured outcomes**: checkout conversion +18% at Orbital Studio, app rating 3.2 to 4.4 at Kerno Mobility"
   ],
   "skills": [
-    {
-      "label": "Growth & Acquisition",
-      "items": [
-        "Google Ads",
-        "Meta Ads Manager",
-        "Facebook Ads",
-        "Instagram Ads",
-        "SEO",
-        "SEM",
-        "Lead generation",
-        "Growth hacking"
-      ]
-    },
-    {
-      "label": "Experimentation",
-      "items": [
-        "A/B testing",
-        "Conversion optimisation",
-        "Funnel optimisation",
-        "Landing pages",
-        "Multichannel campaigns"
-      ]
-    },
-    {
-      "label": "Data & Analytics",
-      "items": [
-        "GA4",
-        "Google Tag Manager",
-        "Power BI",
-        "Looker Studio (Data Studio)",
-        "Excel",
-        "Data-driven marketing",
-        "Competitive analysis"
-      ]
-    },
-    {
-      "label": "Projects & Content",
-      "items": [
-        "Project scoping",
-        "Stakeholder coordination",
-        "KPI tracking",
-        "Reporting",
-        "Content strategy",
-        "Copywriting",
-        "Webflow",
-        "ChatGPT"
-      ]
-    },
-    {
-      "label": "CRM & Automation",
-      "items": [
-        "HubSpot",
-        "Brevo",
-        "Zapier",
-        "Lead nurturing",
-        "Lead scoring",
-        "Email marketing",
-        "Salesforce (user)"
-      ]
-    }
+    {"label": "Product design", "items": ["User flows", "Wireframes", "Prototyping", "Interaction design", "UI design", "Figma", "Protopie"]},
+    {"label": "Research", "items": ["User interviews", "Usability testing", "Diary studies", "Journey maps", "Dovetail", "Maze"]},
+    {"label": "Design systems", "items": ["Design tokens", "Component libraries", "Figma variables", "Storybook", "Zeroheight"]},
+    {"label": "Accessibility", "items": ["WCAG 2.1", "RGAA", "Screen-reader testing", "Colour contrast", "Keyboard navigation"]},
+    {"label": "Delivery", "items": ["Design sprints", "Scrum", "Developer handoff", "Jira", "Notion", "Miro"]}
   ],
   "experience": [
-    {
-      "id": "velora",
-      "bullets": [
-        "Led **end-to-end digital marketing projects**, from scoping and stakeholder coordination to KPI tracking and decision-ready reporting",
-        "Designed **Power BI and Excel dashboards** for campaign data, with Google Analytics and Google Tag Manager tracking",
-        "Ran **email campaigns and lead scoring in HubSpot** for city partners and employers"
-      ]
-    },
-    {
-      "id": "portside",
-      "bullets": [
-        "Ran **email and LinkedIn partner outreach** to book meetings with carriers and clients, and built the LinkedIn content strategy",
-        "Led the **Webflow website and brand book** as a full-cycle project, coordinating business, design and development stakeholders"
-      ]
-    },
-    {
-      "id": "bocado",
-      "bullets": [
-        "Ran **Google Ads and Meta Ads campaigns** for customer acquisition in three cities",
-        "Designed **A/B tests on automated email sequences** in Brevo and optimised conversion on the landing pages",
-        "Managed **SEO for the city landing pages** with Semrush and Google Search Console"
-      ]
-    },
-    {
-      "id": "atlantica",
-      "bullets": [
-        "Managed **Facebook Ads and Google Ads** for lead generation targeting prospective students",
-        "Led **multi-channel campaigns** across social media, email and webinars, nurturing prospects in HubSpot"
-      ]
-    },
-    {
-      "id": "pixelfox",
-      "bullets": [
-        "Ran **Facebook and Instagram Ads** campaigns and created photo and video content for local brands"
-      ]
-    },
-    {
-      "id": "callwave",
-      "bullets": [
-        "Handled **personalised client follow-up** and problem resolution, managing client interactions in Salesforce"
-      ]
-    }
+    {"id": "hexalab", "bullets": [
+      "Designed the **patient portal and clinician web app** (appointments, results, messaging), from research to developer handoff",
+      "Built **Pulse, the design system** (tokens, components, Storybook and Zeroheight documentation), used by 4 product squads",
+      "Ran **120+ usability sessions** with patients, nurses and doctors, in French and English",
+      "Brought **3 products to WCAG 2.1 AA** with the front-end team: contrast, keyboard paths, screen-reader testing"
+    ]},
+    {"id": "orbital", "bullets": [
+      "Designed a **retail bank's mobile app** (onboarding, transfers, card controls) with the client's product team",
+      "Redesigned an **e-commerce checkout**: conversion rose by 18% in the month after release",
+      "Facilitated **14 design sprints** with clients, from problem framing to tested prototype"
+    ]},
+    {"id": "kerno", "bullets": [
+      "Designed the **commuter ticketing app** (tickets, passes, real-time disruptions) for iOS and Android",
+      "Led the **research with commuters**: 40 interviews, diary studies, in-station observation",
+      "Rebuilt the **purchase flow**: the app-store rating went from 3.2 to 4.4 over a year"
+    ]},
+    {"id": "atelier", "bullets": [
+      "Integrated designs in **HTML and CSS** for about 30 WordPress and Webflow sites, responsive and tested on real devices"
+    ]}
   ],
   "lang": "en",
   "target": {
     "company": "Northwind",
-    "url": "https://example.com/jobs/growth-marketer",
+    "url": "https://example.com/jobs/product-designer",
     "color": "#596fe3"
   }
 }

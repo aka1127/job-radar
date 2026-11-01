@@ -1,124 +1,43 @@
 {
-  "headline": "Responsable Marketing B2B | SEO/SEA, marketing automation & génération de leads",
-  "summary": "Marketeur digital avec +5 ans d'expérience dans 3 pays, en B2B et en B2C : acquisition payante (Google Ads, Meta Ads), SEO, tests A/B et automatisation CRM, avec un pilotage de projets de bout en bout.",
+  "headline": "Product Designer | Produits patients et soignants, design system, accessibilité",
+  "summary": "Product designer avec +8 ans d'expérience, d'une agence web lilloise à une scale-up e-santé lyonnaise : recherche, parcours et prototypes, un design system utilisé par 4 équipes produit, 3 produits conformes WCAG 2.1 AA. Bilingue FR/EN.",
   "strengths": [
-    "**Pilotage de projets de bout en bout** : cadrage, suivi des KPI et reporting Power BI chez Velora Mobility",
-    "**Acquisition payante et tests** : campagnes Google Ads et Meta Ads, tests A/B sur l'emailing chez Bocado",
-    "**Coordination des parties prenantes** : lancement de la plateforme avec les équipes métier, design et développement chez Portside Logistics"
+    "**De la recherche au handoff** : portail patient et application soignants conçus de bout en bout chez Hexalab Santé",
+    "**Design system** : Pulse, des tokens à la documentation Storybook, utilisé par 4 équipes produit chez Hexalab Santé",
+    "**Résultats mesurés** : +18 % de conversion sur le checkout chez Orbital Studio, note de 3,2 à 4,4 chez Kerno Mobility"
   ],
   "skills": [
-    {
-      "label": "Acquisition digitale",
-      "items": [
-        "SEO",
-        "SEM",
-        "Google Ads",
-        "Meta Ads Manager",
-        "Facebook Ads",
-        "Instagram Ads",
-        "Génération de leads",
-        "Landing pages"
-      ]
-    },
-    {
-      "label": "Automation & CRM",
-      "items": [
-        "HubSpot",
-        "Brevo",
-        "Zapier",
-        "Lead nurturing",
-        "Lead scoring",
-        "Email marketing",
-        "Salesforce (utilisateur)",
-        "Marketing automation"
-      ]
-    },
-    {
-      "label": "Analyse & reporting",
-      "items": [
-        "GA4",
-        "Google Tag Manager",
-        "Power BI",
-        "Looker Studio (Data Studio)",
-        "Excel",
-        "Tableaux de bord",
-        "Analyse concurrentielle",
-        "Suivi des KPI"
-      ]
-    },
-    {
-      "label": "Contenu & social",
-      "items": [
-        "Stratégie de contenu",
-        "Copywriting",
-        "Contenu LinkedIn",
-        "Stratégie social media",
-        "Webflow",
-        "WordPress",
-        "Canva"
-      ]
-    },
-    {
-      "label": "Pilotage & marque",
-      "items": [
-        "Cadrage de projet",
-        "Coordination transverse",
-        "Reporting",
-        "Brand book",
-        "Supports événementiels",
-        "Notion",
-        "Asana"
-      ]
-    }
+    {"label": "Design produit", "items": ["Parcours utilisateurs", "Wireframes", "Prototypage", "Design d'interaction", "UI design", "Figma", "Protopie"]},
+    {"label": "Recherche", "items": ["Entretiens utilisateurs", "Tests utilisateurs", "Journaux de bord", "Cartes de parcours", "Dovetail", "Maze"]},
+    {"label": "Design system", "items": ["Design tokens", "Bibliothèques de composants", "Variables Figma", "Storybook", "Zeroheight"]},
+    {"label": "Accessibilité", "items": ["WCAG 2.1", "RGAA", "Tests lecteur d'écran", "Contrastes", "Navigation clavier"]},
+    {"label": "Delivery", "items": ["Design sprints", "Scrum", "Handoff développeurs", "Jira", "Notion", "Miro"]}
   ],
   "experience": [
-    {
-      "id": "velora",
-      "bullets": [
-        "Pilotage de **projets marketing digital de bout en bout**, du cadrage et de la coordination des équipes au suivi des KPI et au reporting.",
-        "Conception de **tableaux de bord Power BI et Excel** pour l'analyse des campagnes, avec le suivi Google Analytics et Google Tag Manager.",
-        "Gestion des **campagnes emailing et du lead scoring dans HubSpot** pour les villes partenaires et les employeurs."
-      ]
-    },
-    {
-      "id": "portside",
-      "bullets": [
-        "Développement de la **notoriété de la marque** : brand book, site Webflow, stratégie de contenu LinkedIn, supports pour les salons.",
-        "Prospection **email et LinkedIn des partenaires** pour obtenir des rendez-vous avec les transporteurs et les clients."
-      ]
-    },
-    {
-      "id": "bocado",
-      "bullets": [
-        "Gestion des **campagnes Google Ads et Meta Ads** pour l'acquisition de clients dans trois villes.",
-        "Mise en place de **tests A/B sur les séquences emailing** automatisées dans Brevo et optimisation des landing pages.",
-        "Pilotage du **SEO des pages villes** avec Semrush et Google Search Console."
-      ]
-    },
-    {
-      "id": "atlantica",
-      "bullets": [
-        "Gestion des **campagnes Facebook Ads et Google Ads** pour la génération de leads auprès des futurs étudiants.",
-        "Animation de **campagnes multicanales** sur les réseaux sociaux, l'emailing et les webinaires, avec le nurturing dans HubSpot."
-      ]
-    },
-    {
-      "id": "pixelfox",
-      "bullets": [
-        "Gestion des **campagnes Facebook et Instagram Ads** et création de contenus photo et vidéo pour des marques locales."
-      ]
-    },
-    {
-      "id": "callwave",
-      "bullets": [
-        "**Suivi client personnalisé** et résolution de problèmes, avec la gestion des interactions dans Salesforce."
-      ]
-    }
+    {"id": "hexalab", "bullets": [
+      "Conception du **portail patient et de l'application soignants** (rendez-vous, résultats, messagerie), de la recherche au handoff.",
+      "Création de **Pulse, le design system** (tokens, composants, documentation Storybook et Zeroheight), utilisé par 4 équipes produit.",
+      "Animation de **plus de 120 tests utilisateurs** avec des patients, des infirmiers et des médecins, en français et en anglais.",
+      "Mise en conformité de **3 produits WCAG 2.1 AA** avec l'équipe front : contrastes, parcours clavier, tests lecteur d'écran."
+    ]},
+    {"id": "orbital", "bullets": [
+      "Conception de **l'application mobile d'une banque de détail** (onboarding, virements, pilotage de carte) avec l'équipe produit du client.",
+      "Refonte d'un **checkout e-commerce** : +18 % de conversion le mois suivant la mise en ligne.",
+      "Animation de **14 design sprints** avec les clients, du cadrage du problème au prototype testé."
+    ]},
+    {"id": "kerno", "bullets": [
+      "Conception de **l'application voyageurs** (titres, abonnements, perturbations en temps réel) sur iOS et Android.",
+      "Pilotage de la **recherche auprès des voyageurs** : 40 entretiens, journaux de bord, observation en station.",
+      "Refonte du **parcours d'achat** : note de l'application passée de 3,2 à 4,4 en un an."
+    ]},
+    {"id": "atelier", "bullets": [
+      "Intégration **HTML et CSS** d'une trentaine de sites WordPress et Webflow, responsive et testés sur de vrais appareils."
+    ]}
   ],
   "lang": "fr",
   "target": {
     "company": "Northwind",
-    "url": "https://example.com/jobs/responsable-marketing",
+    "url": "https://example.com/jobs/product-designer",
     "color": "#12355b"
   }
 }

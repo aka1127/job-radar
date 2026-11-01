@@ -14,14 +14,15 @@ from pathlib import Path
 import requests
 
 from . import careers, geo
+from .web import UA
 
 log = logging.getLogger(__name__)
-HEADERS = careers.UA | {"Accept": "application/json"}
+HEADERS = {"Accept": "application/json"}
 
 
 def _get_json(url: str, **kw):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=20, **kw)
+        r = requests.get(url, headers=UA | HEADERS, timeout=20, **kw)
         return r.json() if r.ok else None
     except (requests.RequestException, ValueError):
         return None
@@ -62,7 +63,7 @@ def workday(entry: str) -> int:
         r = requests.post(f"https://{tenant}.{cluster}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs",
                           json={"appliedFacets": {}, "limit": 20, "offset": 0,
                                 "searchText": geo.country_name(careers.COUNTRY)},
-                          headers=HEADERS | {"Content-Type": "application/json"}, timeout=20)
+                          headers=UA | HEADERS | {"Content-Type": "application/json"}, timeout=20)
         data = r.json() if r.ok else {}
     except (requests.RequestException, ValueError):
         return 0
@@ -143,6 +144,7 @@ def discover(store, lists: Path, report: Path | None = None, limit: int | None =
         if store.add_company(f"{ats}:{slug.lower()}", name, ats, slug, url, "github list (job-board-aggregator)"):
             added[ats] = added.get(ats, 0) + 1
     if report:
+        report.parent.mkdir(parents=True, exist_ok=True)
         with open(report, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["ats", "board", "jobs_in_country"])

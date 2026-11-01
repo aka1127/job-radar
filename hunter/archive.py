@@ -1,6 +1,7 @@
-"""The national archive: every job posting any source returns, for every job in France, whatever the candidate.
-It is the base the Job Radar grows into. One row per posting: seeing it again only refreshes last_seen and keeps the
-longest description. The place is reduced to a département so the archive can be counted by area."""
+"""The archive: every job posting any source returns, whatever the candidate, in one database per machine.
+One row per posting: seeing it again only refreshes last_seen and keeps the longest description. For a candidate in
+France the place is also reduced to a département (rules below, then the official commune directory) so the archive
+can be counted by area; elsewhere the French rules stay off (Archive(french=False))."""
 import json
 import logging
 import re
@@ -11,12 +12,12 @@ from pathlib import Path
 
 import requests
 
-from .candidate import ROOT
+from .candidate import HOME
 from .store import dedupe_key
 from .text import fold
 
 log = logging.getLogger(__name__)
-DB = ROOT / "data" / "jobs.db"
+DB = HOME / "data" / "jobs.db"
 GEO = "https://geo.api.gouv.fr/communes"  # official French commune directory, free and open
 SCHEMA = """
 create table if not exists postings (
@@ -131,26 +132,30 @@ def department(location: str, postcode: str = "") -> str:
     return next((dep for city, dep in CITY_DEPARTMENT.items() if f" {city} " in folded), "")
 
 
-def _row(job: dict, seen: str, dep: str = "") -> tuple:
+def _row(job: dict, seen: str, dep: str | None = None) -> tuple:
+    """dep: the département decided by save() ("" outside France); None computes it with the French rules."""
     extra = {k: v for k, v in job.items() if k not in COLUMNS and k not in NOT_KEPT and v not in ("", None, [], {})}
     if isinstance(job.get("extra"), dict):
         extra = {k: v for k, v in extra.items() if k != "extra"} | job["extra"]
+    if dep is None:
+        dep = job.get("department") or department(job.get("location") or "", job.get("postcode") or "")
     return (job["id"], dedupe_key(job), job.get("source") or job.get("site") or "", job.get("title") or "",
-            job.get("company") or "", job.get("location") or "", job.get("postcode") or "",
-            dep or job.get("department") or department(job.get("location") or "", job.get("postcode") or ""),
+            job.get("company") or "", job.get("location") or "", job.get("postcode") or "", dep,
             job.get("contract") or "", job.get("rome") or "", job.get("posted") or "", job.get("url") or "",
             job.get("apply_url") or "", job.get("description") or "", seen, seen,
             json.dumps(extra, ensure_ascii=False, default=str))
 
 
 class Archive:
-    def __init__(self, path: Path | None = None):
+    def __init__(self, path: Path | None = None, french: bool = True):
+        """french=False (a candidate outside France): no département parsing, no commune lookups."""
         path = path or DB  # read at call time, so tests can point it elsewhere
         path.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path, timeout=60, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
         self._lock = threading.Lock()
+        self.french = french
 
     def lookup(self, location: str) -> str:
         """The département of a town the rules do not know, from the official commune directory; cached, so each
@@ -183,11 +188,11 @@ class Archive:
             return 0
         deps = {}
         for j in jobs:
-            dep = j.get("department") or department(j.get("location") or "", j.get("postcode") or "")
-            if not dep and lookups > 0 and j.get("location"):
+            dep = j.get("department") or (department(j.get("location") or "", j.get("postcode") or "") if self.french else "")
+            if not dep and self.french and lookups > 0 and j.get("location"):
                 lookups -= 1
                 dep = self.lookup(j["location"])
-            deps[j["id"]] = dep
+            deps[j["id"]] = dep or ""
         seen = datetime.now(timezone.utc).isoformat(timespec="seconds")
         with self._lock:
             ids = [j["id"] for j in jobs]

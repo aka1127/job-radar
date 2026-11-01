@@ -4,31 +4,32 @@
 
 # Where
 country: "France"                    # the country to work in: its English name or ISO code (FR, DE, GB, US, MA...)
-home: "Lyon"                         # the city you live in, or want to work around
+home: "Lyon"                         # the city you live in, or want to work around (a city of 15,000+ people)
 radius_km: 40                        # how far you can travel to work
-relocation: "yes, Paris or Bordeaux" # would you move, and where
+relocation: "yes, Paris or Nantes"   # would you move, and where
 remote: "hybrid ok"                  # any / remote only / hybrid ok / on-site ok
 
 # What
-targets: "sports marketing, digital marketing, project manager, partnerships"
-level: "mid"                         # entry / mid / senior / lead / manager
-priority_sector: "sport"             # one sector you want first; leave empty for none
-company_types: "clubs, sports brands, agencies, scale-ups"
-avoid: "call centres, field sales"
+targets: "product designer, UX designer, UX researcher, design system, accessibility"
+level: "senior"                      # entry / mid / senior / lead / manager
+priority_sector: "healthcare"        # one sector you want first; leave empty for none
+company_types: "health-tech, hospital groups, scale-ups, product agencies"
+avoid: "graphic design, motion design, agencies that only do branding"
 
-# Conditions
+# Conditions (they go to config.yaml, never into the profile or a CV)
 contracts: "permanent, fixed-term"   # permanent, fixed-term, freelance, internship, apprenticeship
 schedule: "full-time"
-salary: "38000 EUR"                  # lowest yearly gross salary you would accept
+salary: "48000 EUR"                  # lowest yearly gross salary you would accept
 availability: "within a month"
 work_permit: "EU citizen"
 
 # Languages
-languages: "French native, English C1, Spanish B2, Portuguese basic"
+languages: "French native, English C1, Spanish B1"
 cv_languages: "en, fr"               # languages your CVs can be written in (en, fr, es, de, it, pt, nl)
+gender_titles: "as my CV writes them"   # feminine / masculine / neutral, for languages that gender job titles
 
 # You
-proud: "1.1M Instagram views in 30 days on my basketball media; 40K podcast plays"
-links: "https://courtside.example.com"
+proud: "120+ usability sessions run; 3 products brought to WCAG 2.1 AA; checkout conversion +18%"
+links: "https://alexmoreau.example.com"
 packs_per_day: 10                    # tailored applications you can act on per day
 notes: "driving licence"

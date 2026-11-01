@@ -11,8 +11,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import alerts, archive, ats, careers, harvest, i18n, logos, opendata, sitemaps, sources, targets
+from .brand import brand, text
 from .i18n import LABELS
-from .candidate import ROOT, file_part
+from .candidate import HOME, file_part
 from .llm import Claude, UsageLimit
 from .notify import Telegram, alert, brief_text, deliver, first_line, outreach_text, people_search_url
 from .docx_cv import cv_docx
@@ -125,7 +126,7 @@ def portal_name(url: str) -> str:
 
 
 def file_tag(company: str) -> str:
-    return file_part(company, 25) or "Entreprise"
+    return file_part(company, 25) or "Company"
 
 
 def target_brand(cand, job: dict, brief: dict | None) -> dict | None:
@@ -135,7 +136,7 @@ def target_brand(cand, job: dict, brief: dict | None) -> dict | None:
     if not cand.config.get("brand_colors", True) or not company or re.search(r"confidenti|anonym|undisclosed", company, re.I):
         return None
     domain = re.sub(r"^https?://|^www\.|/.*$", "", ((brief or {}).get("website") or "").strip().lower())
-    folder, key = ROOT / "data" / "logos", slug(company, 40)
+    folder, key = HOME / "data" / "logos", slug(company, 40)
     if domain:
         logo = logos.ensure(folder, key, company, domain, monogram_ok=False)
     else:  # no research this time: reuse a logo fetched for an earlier posting
@@ -152,7 +153,7 @@ def build(cand, claude: Claude, renderer: Renderer, job: dict, fit: dict, lang: 
     # Hyphens, no spaces: portals store the name with the application ("Alex-Moreau-CV-Alan.pdf").
     tag = file_tag(job["company"])
     final_pdf = folder / f"{cand.file_stem}-CV-{tag}.pdf"
-    alt_pdf = folder / "autre_version" / f"{cand.file_stem}-CV-{tag}.pdf"
+    alt_pdf = folder / "other_version" / f"{cand.file_stem}-CV-{tag}.pdf"
     letter_pdf = folder / f"{cand.file_stem}-{LABELS.get(lang, LABELS['en'])['letter_file']}-{tag}.pdf"
     pdf = folder / ".work" / "cv.pdf"  # draft used by the checks and revisions
 
@@ -200,7 +201,7 @@ def build(cand, claude: Claude, renderer: Renderer, job: dict, fit: dict, lang: 
             tmp.unlink(missing_ok=True)
 
     # One CV goes out: the designed one, or the plain one when the job is applied through a strict corporate
-    # portal (Workday, Taleo...). The other version is kept in autre_version/ under the same name.
+    # portal (Workday, Taleo...). The other version is kept in other_version/ under the same name.
     strict = bool(STRICT_PORTALS.search(job["apply_url"] or job["url"] or ""))
     pages, scale = renderer.cv_pdf(cv, cand, final_pdf, plain=strict)
     renderer.cv_pdf(cv, cand, alt_pdf, plain=not strict)
@@ -301,17 +302,15 @@ def remind(cand, store: Store):
     for row in store.followups_due(days):
         follow_up = json.loads(row["data"] or "{}").get("follow_up", "")
         if tg.enabled:
-            sent = tg.send(f"⏰ <b>Follow-up time</b>: {html.escape(display_title(row['title']))} · "
-                           f"{html.escape(row['company'])}\nYou applied {days} days ago. Send this to the person "
-                           f"you contacted (or reply to your application email):\n<pre>{html.escape(follow_up)}</pre>",
-                           {"inline_keyboard": [[{"text": "✅ Follow-up sent", "callback_data": f"f:{row['cb']}"}]]})
+            sent = tg.send(text("followup", title=html.escape(display_title(row["title"])), company=html.escape(row["company"]),
+                                days=days, text=html.escape(follow_up)),
+                           {"inline_keyboard": [[{"text": text("btn_followed_up"), "callback_data": f"f:{row['cb']}"}]]})
             if not sent.get("ok"):
                 continue  # Telegram did not take it: try again next run
         store.set_status(row["id"], "followed_up")
 
 
-SOURCES = {"linkedin": "LinkedIn", "indeed": "Indeed", "hellowork": "HelloWork", "france_travail": "France Travail",
-           "sent by link": "your links"}
+SOURCES = {"linkedin": "LinkedIn", "indeed": "Indeed", "hellowork": "HelloWork", "france_travail": "France Travail"}
 
 
 def weekly_summary(cand, store: Store, when: datetime | None = None):
@@ -327,24 +326,26 @@ def weekly_summary(cand, store: Store, when: datetime | None = None):
     in_week = lambda col: sum(bool(r[col]) and r[col][:10] >= since for r in rows)  # noqa: E731
     by_source: dict[str, int] = {}
     for r in sent:
-        name = SOURCES.get(r["site"], "company sites" if r["site"].startswith("career page") else r["site"])
+        name = SOURCES.get(r["site"]) or (text("source_company_sites") if r["site"].startswith("career page")
+                                          else text("source_links") if r["site"] == "sent by link" else r["site"])
         by_source[name] = by_source.get(name, 0) + 1
     waiting = [r for r in rows if r["status"] == "sent"]
     best = max(waiting, key=lambda r: r["score"] or 0) if waiting else None
     applied = sum(bool(r["applied_at"]) for r in rows)
     interviews = sum(bool(r["interview_at"]) for r in rows)
-    lines = [f"📊 <b>Your week</b> ({(when - timedelta(days=7)):%d %b} to {when:%d %b})",
-             f"• Jobs sent: {len(sent)}" + (" (" + ", ".join(f"{k} {v}" for k, v in sorted(
-                 by_source.items(), key=lambda kv: -kv[1])) + ")" if by_source else ""),
-             f"• Applied: {in_week('applied_at')} · Interviews: {in_week('interview_at')} · "
-             f"Offers: {sum(r['status'] == 'offer' and (r['outcome_at'] or '')[:10] >= since for r in rows)} · "
-             f"Rejected: {sum(r['status'] == 'rejected' and (r['outcome_at'] or '')[:10] >= since for r in rows)}"]
+    sources_part = (" (" + ", ".join(f"{k} {v}" for k, v in sorted(by_source.items(), key=lambda kv: -kv[1])) + ")"
+                    if by_source else "")
+    lines = [text("weekly_title", start=f"{when - timedelta(days=7):%d %b}", end=f"{when:%d %b}"),
+             text("weekly_sent", n=len(sent), by_source=sources_part),
+             text("weekly_outcomes", applied=in_week("applied_at"), interviews=in_week("interview_at"),
+                  offers=sum(r["status"] == "offer" and (r["outcome_at"] or "")[:10] >= since for r in rows),
+                  rejected=sum(r["status"] == "rejected" and (r["outcome_at"] or "")[:10] >= since for r in rows))]
     if best:
-        lines.append(f"• Waiting for your decision: {len(waiting)}. Best: <b>{html.escape(display_title(best['title']))}"
-                     f" · {html.escape(best['company'])}</b> ({best['score']}/100)")
+        lines.append(text("weekly_best", n=len(waiting), title=html.escape(display_title(best["title"])),
+                          company=html.escape(best["company"]), score=best["score"]))
     if applied:
-        lines.append(f"• Since the start: {interviews} interview{'s' * (interviews != 1)} from {applied} "
-                     f"application{'s' * (applied != 1)} ({round(100 * interviews / applied)}%)")
+        lines.append(text("weekly_since", interviews=interviews, s1="s" * (interviews != 1), applied=applied,
+                          s2="s" * (applied != 1), rate=round(100 * interviews / applied)))
     if tg.send("\n".join(lines)).get("ok"):
         store.put("weekly_sent", week)
 
@@ -357,8 +358,7 @@ def watch_usage(cand, store: Store):
     limit = cand.config["claude"].get("daily_call_warning", 400)
     if today["calls"] >= limit and store.get("usage_warned") != today["day"]:
         log.warning("Claude usage: %d calls today (warning at %d)", today["calls"], limit)
-        alert(cand, f"Claude usage: {today['calls']} calls today (heads-up threshold {limit}). "
-                    "Nothing is blocked; see python -m hunter usage.")  # admin chat, never the candidate's
+        alert(cand, text("alert_usage", calls=today["calls"], limit=limit))  # admin chat, never the candidate's
         store.put("usage_warned", today["day"])
 
 
@@ -441,8 +441,7 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
     started = now()
     paused = paused_hours(store)
     if paused and not dry:  # the loop runs about hourly: a longer gap means the PC slept or the hunter stopped
-        alert(cand, f"The hunter was paused for about {paused} hours (PC asleep, lid closed or the program stopped). "
-                    "It is catching up now: no job from that time is lost.")
+        alert(cand, text("alert_paused", hours=paused))
     awake = sending_hours(cfg)
     if not dry and awake:
         redeliver(cand, store)
@@ -452,7 +451,8 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
     log.info("run for %s, looking back %dh%s%s", cand.name, hours,
              "".join(f", {b} {h}h (catching up)" for b, h in windows.items() if h > hours),
              "".join(f", {b} rests this run" for b in sources.BOARDS if b not in windows))
-    arch = None if dry else archive.Archive()  # every posting seen, all jobs, kept for the national database
+    france = targets.country(cfg) == "FR"  # the French extras: département logic, crawled sites, open data, harvest
+    arch = None if dry else archive.Archive(french=france)  # every posting seen, all jobs, kept for the archive
     raw = sources.collect(cand, windows) if boards else []
     if boards and not dry:
         for b in windows:
@@ -467,7 +467,6 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
         if not dry:
             grow_watchlist(cand, store, raw, cands)
         cands += prefilter(careers.poll(store, cfg, title_ok, keep=arch.save if arch else None), title_ok, store)
-    france = targets.country(cfg) == "FR"  # the national archive feeds (crawled sites, open data) are French
     if arch and france:  # what the background crawlers and the France Travail harvest archived since the last run
         since = store.get("last_run") or (datetime.now(timezone.utc) - timedelta(
             hours=cfg["scraping"]["first_run_hours"])).isoformat(timespec="seconds")
@@ -519,8 +518,8 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
             continue
         lang = i18n.output_language(detect_lang(j["description"]) or fit["language"], targets.cv_languages(cfg))
         tier = TIERS.get(fit["location_type"])
-        bar = targets.bar_for(fit, cfg)
-        keep = (tier and fit["score"] >= bar[tier] and not fit["dealbreakers"]
+        bar = targets.bar_for(fit, cfg)  # {1: 55, 2: 65}; a tier the config does not price never passes
+        keep = (tier and fit["score"] >= bar.get(tier, 101) and not fit["dealbreakers"]
                 and targets.contract_ok(fit["contract"], cfg))
         store.save(j, "queued" if keep else "skipped", fit["score"], tier, {"fit": fit, "lang": lang})
     if boards:  # only now that every posting found is saved: a run cut short searches the same hours again
@@ -561,7 +560,8 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
                 except Exception as e:
                     log.exception("pack failed for %s: %s", j["title"], e)
                     store.save(j, "failed", fit["score"], tier, {"fit": fit, "lang": lang, "error": str(e)})
-                    alert(cand, f"Pack failed: {j['title']} | {j['company']}\n{type(e).__name__}: {first_line(e)}")
+                    alert(cand, text("alert_pack_failed", title=j["title"], company=j["company"],
+                                     error=f"{type(e).__name__}: {first_line(e)}"))
     if career_pages and cfg["sources"].get("career_pages"):
         try:
             discover(cand, store, claude)
@@ -616,7 +616,7 @@ def apply_to(cand, url: str) -> str:
     store, claude = Store(cand), Claude(cand)
     job = job_from_url(cand, claude, url)
     if not job:
-        return "Could not read a job posting at that link."
+        return text("link_unreadable")
     fit = claude.score(job)
     lang = i18n.output_language(detect_lang(job["description"]) or fit["language"], targets.cv_languages(cand.config))
     with Renderer() as renderer:
@@ -639,8 +639,8 @@ def write_dashboard(cand, store: Store):
     cand.out.mkdir(parents=True, exist_ok=True)
     counts = store.counts()
     (cand.out / "index.html").write_text(
-        "<!doctype html><meta charset=utf-8><title>Job hunt</title><style>body{font:14px system-ui;margin:24px}"
+        f"<!doctype html><meta charset=utf-8><title>{e(brand()['name'])}</title><style>body{{font:14px system-ui;margin:24px}}"
         "table{border-collapse:collapse}td,th{padding:6px 10px;border-bottom:1px solid #ddd;text-align:left}</style>"
-        f"<h1>{e(cand.full_name)}: applications</h1><p>{e(json.dumps(counts))}</p><table><tr><th>Date</th>"
+        f"<h1>{e(text('dashboard_title', name=cand.full_name))}</h1><p>{e(json.dumps(counts))}</p><table><tr><th>Date</th>"
         "<th>Status</th><th>Fit</th><th>ATS</th><th>Screener</th><th>Role</th><th>Company</th><th>Where</th>"
         f"<th>Links</th></tr>{''.join(rows)}</table>", encoding="utf-8")

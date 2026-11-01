@@ -1,23 +1,22 @@
-# Example candidate (fictional): Alex Moreau, Lyon, digital marketing with a priority on the sports industry.
+# Example candidate (fictional): Alex Moreau, Lyon, product design with a priority on healthcare.
 # Overrides ../../config.yaml. Copy this folder to candidates/<name>/ and adapt, or run
 # `python -m hunter onboard <name> --cv your-cv.pdf` to have it written from a CV.
 
 country: FR                # ISO code of the country to search in (DE, ES, GB, US, MA...)
-home: "Lyon, Auvergne-Rhône-Alpes"
+home: "Lyon, Auvergne-Rhône-Alpes"   # a city GeoNames knows (15,000+ people); the radius is drawn around it
 home_label: Lyon
 home_radius_km: 40         # cities this close to Lyon are the home area: tier 1 with remote jobs, scored first
 cv_languages: [en, fr]     # CVs and letters in English or French; postings in other languages get English
 
 # Used by the scorer and the triage: what counts as a core target, and at which level.
 level_note: >
-  First priority: the sports industry (clubs, leagues, federations, sports brands, sports media, sports events):
-  sports marketing, partnerships and sponsorship, fan engagement, sports content. Score entry-to-mid sports roles
-  generously when they fit Courtside and digital marketing. Other core targets, individual-contributor level:
-  chargé(e) de marketing digital, chef de projet marketing digital, chef de projet (digital, communication,
-  events), growth or acquisition marketing, CRM / marketing automation, content or social media manager,
-  partnerships or account manager. Manager, Head of or Responsable titles are stretch roles: score them 75+ only
-  when the scope matches the experience, otherwise below 60. Call-centre, retail, field-sales and IT or
-  construction project roles are below 40.
+  First priority: healthcare (hospital and clinic groups, e-health and medtech companies, health insurers, public
+  health bodies): product, UX and UI design, UX research, design systems and accessibility on patient or clinician
+  products. Score mid-to-senior health design roles generously when they fit the Hexalab Santé work. Other core
+  targets, individual-contributor or senior level: product designer, UX/UI designer, UX researcher, design system
+  designer, accessibility specialist. Lead or Head of design titles are stretch roles: score them 75+ only when the
+  team is small and the scope matches, otherwise below 60. Graphic, motion, industrial or interior design, and
+  marketing or developer roles are below 40.
 
 # Tier 1: the home region or remote in France. Tier 2: elsewhere in France, lower priority and a higher bar.
 locations:
@@ -26,108 +25,106 @@ locations:
 min_score: {1: 55, 2: 65}
 contracts: [permanent, fixed_term, unknown]   # in France: CDI, CDD
 dealbreakers: [internship or apprenticeship, a language the candidate lacks required at native level,
-               far more years than the candidate has, an engineering role, a job abroad]
+               far more years than the candidate has, a developer or engineering role, a job abroad]
 
 # Job families the scorer sorts postings into; each one angles the CV its own way (framing_notes).
 families:
-  sport: "the job's core is sport: sports marketing, club or league partnerships, sponsorship, fan engagement, sports content or sports events"
-  content_social: "content, social media, community, video, editorial"
-  project_management: "project or programme manager, coordination, PMO"
-  event: "events, tournaments, trade shows, event production"
-  partnerships: "partnerships, account management, business development, sponsorship sales, customer success"
-  digital_marketing: "any other marketing or communication role"
-default_family: digital_marketing
+  health: "the job's core is a health product or a health employer: patient, clinician or care-team products, e-health, medtech, hospital groups, health insurers"
+  ux_research: "user research, usability testing, service design, discovery"
+  design_system: "design systems, UI kits, design ops, front-end collaboration"
+  accessibility: "accessibility, inclusive design, RGAA or WCAG audits and remediation"
+  product_design: "any other product, UX or UI design role"
+default_family: product_design
 
-# The priority sector: its jobs get their own look in Telegram, go first, and sport roles get a lower bar.
+# The priority sector: its jobs get their own look in Telegram, go first, and health roles get a lower bar.
 priority:
-  family: sport
-  label: SPORTS INDUSTRY
-  tag: SPORT
-  emoji: "🏀🟠"
-  icon: star
+  family: health
+  label: HEALTHCARE
+  tag: HEALTH
+  emoji: "🩺"
+  icon: health             # star, heart, health, bolt, leaf, briefcase, flag, pin, shield, globe, trophy, music
   min_score: {1: 45, 2: 55}
   sector: >-
-    the employer works in sport (club, league, federation, sports brand or retailer, sports media, sports
-    events or sports tech), whatever the role
+    the employer works in health (hospital or clinic group, e-health or medtech company, health insurer, pharma's
+    digital arm, public health body), whatever the role
   note: >-
-    Sport is the candidate's first priority. For priority_sector postings, count Courtside (the basketball media,
-    its audience, its guests and its brand partnerships) as relevant experience, and do not mark the lack of club
-    experience as a gap for entry or mid-level roles.
+    Healthcare is the candidate's first priority. For priority_sector postings, count the Hexalab Santé work (patient
+    portal, clinician app, 120+ usability sessions with patients and care teams, WCAG 2.1 AA) as direct proof, and
+    do not mark the lack of a clinical background as a gap.
 
 framing_notes:
-  sport: >-
-    Sports employer, the candidate's first priority. Courtside first with 4-6 bullets: the audience numbers,
-    Courtside Talks and its guests, Pickup Diaries, game coverage, the brand partnerships. One skills group for
-    sport (sports content, partnerships, fan engagement...). The letter gives the Courtside link as a plain URL.
-  content_social: >-
-    Content / social media role. Courtside first with 3-4 bullets: audience numbers and the content produced end
-    to end. Then agency social media (Pixelfox Studio), social content at Velora Mobility, the video testimonials
-    at Atlantica Business School.
-  project_management: >-
-    Project management role. Frame every job around scoping, planning, coordination, delivery and reporting.
-    Portside Logistics may use alt_title (Project Manager, Digital Strategy). Courtside: 2 bullets on running the
-    weekly production.
-  event: >-
-    Event role. Lead with event organisation: the student sports association (tournaments, a charity run), the
-    trade show at Portside Logistics, the webinars at Atlantica. Courtside: 2 bullets (game coverage, guest
-    coordination).
-  partnerships: >-
-    Partnerships / account role. Callwave gets 2 bullets (sales, upselling, client follow-up in Salesforce); then
-    partner outreach at Portside Logistics, the restaurant referral programme at Bocado, company partnerships at
-    Atlantica. Courtside: 2 bullets (brand partnerships, guest outreach).
-  digital_marketing: >-
-    Marketing role. Lead with the 5+ years of experience in digital marketing. Courtside: 2 bullets, with one
-    audience number.
+  health: >-
+    Health employer, the candidate's first priority. Hexalab Santé first with 4-6 bullets: the patient portal and
+    clinician app, the usability sessions with patients and care teams, the WCAG 2.1 AA products, the design system
+    used by 4 squads. One skills group for health product design (clinical workflows, accessibility, research with
+    patients). The letter gives the portfolio link as a plain URL.
+  ux_research: >-
+    Research role. Hexalab Santé first with 3-4 bullets on the sessions and the research share-out; Orbital Studio
+    may use alt_title (UX Researcher & Designer) with the interviews, tests and journey maps; Kerno Mobility: the 40
+    commuter interviews and diary studies.
+  design_system: >-
+    Design system role. Lead with Pulse at Hexalab Santé (tokens, components, Storybook, Zeroheight, 4 squads), then
+    the Figma component library at Kerno Mobility and the Storybook reviews at Orbital Studio. Clair UI in projects.
+  accessibility: >-
+    Accessibility role. Lead with the 3 WCAG 2.1 AA products at Hexalab Santé and the accessible public-sector
+    service at Orbital Studio; the Opquast and RGAA training; the Atelier Nord templates. Plain CV: no tiles, no
+    portfolio link.
+  product_design: >-
+    Product design role. Lead with 8+ years of product design; Hexalab Santé 3-4 bullets, Orbital Studio 3 bullets
+    (bank app, checkout +18%, design sprints), Kerno Mobility 2 bullets, Atelier Nord 1 bullet.
 
 # Extra writing rules for this field, added to the truth rules of every prompt.
 writing_rules:
   - >-
-    Marketing practices overlap: describe a real activity with the posting's vocabulary (e.g. "SEA" or
-    "acquisition payante" for Google Ads work). Email automation covers "scénarios automatisés", "parcours
-    clients", "segmentation" and "nurturing"; KPI dashboards and reporting cover "suivi des performances".
+    Design practices overlap: describe a real activity with the posting's vocabulary ("product design", "UX/UI
+    design" or "conception d'interfaces" for the same work; "tests utilisateurs" = "usability testing"; "maquettes"
+    = mockups; "parcours" = flows or journeys). Tools stay as the profile names them.
   - >-
     AI is a supporting skill: once in the whole CV at most when the posting does not ask for it, never a skills
-    group named after AI, never "AI agents" or "AI strategy".
-neutral_title: {en: Digital marketer, fr: Marketeur digital}
+    group named after AI.
+neutral_title: {en: Product designer, fr: Designer produit}
 
 # The quick title sort before scoring (triage).
 triage:
   possible: >-
-    a marketing, communication, CRM, content, project, event, partnership or sales role with a vague or mixed
-    title, or a Manager, Head of, Lead or Responsable title in those fields (the full review weighs the level)
+    a design, research, accessibility or product role with a vague or mixed title (Designer, Chef de projet UX,
+    Product Owner UX, Consultant accessibilité), or a Lead, Senior or Head title in those fields (the full review
+    weighs the level)
   skip: >-
-    the work itself is engineering, IT, data science, finance, HR, legal, healthcare, teaching, administration,
-    manual, retail or call-centre work; internships, apprenticeships and graduate programmes; director, VP or
-    C-level roles
-brief_snapshot: "3 observations you actually verified about their marketing (site, content/SEO, social, ads)"
+    the work itself is graphic, motion, 3D, game, industrial, textile or interior design; front-end or software
+    development; marketing, communication, sales, support or HR; internships, apprenticeships and graduate
+    programmes; director, VP or C-level roles
+brief_snapshot: "3 observations you actually verified about their product (app or site onboarding, accessibility, design maturity, design system)"
 
 # CV parts that depend on the family: the creative tiles and the portfolio link in the header.
 cv:
-  creative_families: [sport, content_social]
-  portfolio_families: [sport, content_social, event]
+  creative_families: [health, product_design]
+  portfolio_families: [health, product_design, ux_research, design_system]
   ai_supporting_skill: true   # AI is not this person's field: never a skills group of its own
 
 # Every term runs on every board and location. The first 12 also steer the daily web search for career pages.
 searches:
-  - marketing sport
-  - chef de projet marketing sport
-  - partenariats sport
-  - sponsoring
-  - fan engagement
-  - sports marketing
-  - chef de projet digital
-  - marketing digital
-  - social media manager
-  - content manager
-  - growth marketing
-  - chef de projet événementiel
-  - chef de projet marketing
-  - community manager
-  - account manager
-  - responsable partenariats
-  - CRM marketing
-  - chargé d'acquisition
+  - product designer santé
+  - UX designer santé
+  - product designer
+  - UX designer
+  - UX/UI designer
+  - designer d'expérience utilisateur
+  - UX researcher
+  - design system designer
+  - designer d'interface
+  - accessibilité numérique
+  - UX designer e-santé
+  - designer produit
+  - service designer
+  - UI designer
+  - senior product designer
+  - lead product designer
+  - design ops
+  - consultant accessibilité
+  - product design medtech
+  - UX research santé
 
 # Cheap filter on the job title before any AI call (case-insensitive regex).
-title_must_match: 'market(?!s?\b)|growth|crm|\bseo\b|\bsea\b|acquisition|social media|réseaux sociaux|community|content|contenu|brand|marque|digital|numérique|web ?marketing|traffic|trafic|lead gen|automation|e-?mail|emailing|newsletter|campaign|campagne|communication|admission|recrutement (international|étudiant)|paid media|\bpaid\b|\bsma\b|performance marketing|data marketing|e-?commerce|\bm[ée]dias?\b|copywrit|tracking|sport|sponsor|fan engagement|\bfans?\b|\bclub\b|ligue|league|f[ée]d[ée]ration|basket|football|rugby|podcast|festival|tourn(oi|ament)|\bprojets?\b|\bprojects?\b|[ée]v[ée]nement|\bevents?\b|account (manager|executive)|business develop|d[ée]veloppement commercial|commercial|\bsales\b|partenariat|partenaires?|partnership|customer success|vid[ée]o|[ée]ditorial'
-title_must_not_match: 'stage|student|technical account|freelance|int[eé]rim|portage|stagiaire|\binterns?\b|internship|alternan|apprenti|working student|\bvie\b|v\.i\.e|director|directeur|directrice|\bvp\b|vice.president|chief|\bcmo\b|(?<!community )(?<!business )developer|d[ée]veloppeur(?! commercial)|engineer|ingénieur|programmer|scientist|designer|\bqa\b|tech(nical)? lead|product manager|product owner|key account|customer support|support|talent (acquisition|partner|sourc)|recruit|recrut(?!ement (international|étudiant))|\brh\b|juriste|legal|counsel|comptab|financial (analyst|controller)|contr[ôo]leu?r de gestion|controller|achat|acheteur|logisti|supply|caissier|vendeu|technicien|professeur|enseignant|formateur|procurement|\bpeople\b|digital workplace|transformation digitale|digital transformation|\bmoa\b|\bamoa\b|\bsi\b|syst[èe]mes? d.information|informatique|infrastructure|r[ée]seaux? (?!sociaux)|t[ée]l[ée]com|\bbtp\b|travaux|chantier|b[aâ]timent|g[ée]nie|[ée]lectri|m[ée]cani|industri|\berp\b|\bsap\b|cyber|devops|scrum|immobili|t[ée]l[ée]conseil|t[ée]l[ée]vente|call ?cent|technico|itin[ée]rant|terrain|magasin|conduite d.op[ée]rations|ma[îi]trise d.(ouvrage|oeuvre)|pr[ée]venteur'
+title_must_match: 'design(?!er (graphique|textile|industriel|mobilier|m[ée]canique))|\bux\b|\bui\b|user experience|exp[ée]rience utilisateur|interaction|design system|accessibilit|\brgaa\b|\bwcag\b|ergonom|service design|user research|recherche utilisateur|prototyp|figma|design ?ops|interface'
+title_must_not_match: 'stage|stagiaire|\binterns?\b|internship|alternan|apprenti|working student|freelance|int[eé]rim|portage|director|directeur|directrice|\bvp\b|vice.president|chief|\bcdo\b|head of|graphiste|graphic|motion|\b3d\b|game|jeu vid[ée]o|industrial|industriel|m[ée]canique|textile|\bmode\b|fashion|int[ée]rieur|interior|architect|\bcad\b|\bdao\b|developer|d[ée]veloppeur|engineer|ing[ée]nieur|front.?end|product manager|product owner|chef de produit|marketing|communication|commercial|\bsales\b|support|recrut|\brh\b|\bdata\b|analyst|\bqa\b|test(eur|er)s?\b|sound|audio|lumi[èe]re|\bcao\b|paysag|landscape|floral|culinaire|jardin'

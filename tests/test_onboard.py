@@ -8,8 +8,8 @@ from hunter.candidate import CANDIDATES
 
 EXAMPLE_PROFILE = (CANDIDATES / "example" / "profile.yaml").read_text(encoding="utf-8")
 EXAMPLE_CONFIG = (CANDIDATES / "example" / "config.yaml").read_text(encoding="utf-8")
-CV = ("Alex Moreau - Digital marketer, Lyon. alex.moreau@example.com\n"
-      + "Experience: Velora Mobility, Digital Marketing Analyst, Sep 2023 - Dec 2024. Led marketing projects.\n" * 8)
+CV = ("Alex Moreau - Product designer, Lyon. alex.moreau@example.com\n"
+      + "Experience: Hexalab Santé, Senior Product Designer, Feb 2024 - Present. Designed the patient portal.\n" * 8)
 
 
 class FakeClaude:
@@ -24,7 +24,7 @@ class FakeClaude:
         return self.answers.pop(0)
 
 
-ANSWERS = ("country: France\nhome: Lyon\ntargets: sports marketing\npriority_sector: sport\ncontracts: permanent\n"
+ANSWERS = ("country: France\nhome: Lyon\ntargets: product designer\npriority_sector: healthcare\ncontracts: permanent\n"
            "languages: French native, English C1\n")
 
 
@@ -36,7 +36,7 @@ def files(tmp_path, answers=ANSWERS):
 
 
 def test_a_cv_becomes_a_checked_candidate_folder(tmp_path, monkeypatch):
-    profile = "```yaml\n" + EXAMPLE_PROFILE + "\nonboarding_questions:\n  - How many players watch Pickup Diaries?\n```"
+    profile = "```yaml\n" + EXAMPLE_PROFILE + "\nonboarding_questions:\n  - How many usability sessions per month?\n```"
     fake = FakeClaude([profile, "Here you go:\n```yaml\n" + EXAMPLE_CONFIG + "```"])
     monkeypatch.setattr("hunter.llm.ClaudeCode", fake)
     cv, answers = files(tmp_path)
@@ -44,15 +44,16 @@ def test_a_cv_becomes_a_checked_candidate_folder(tmp_path, monkeypatch):
     profile = yaml.safe_load((folder / "profile.yaml").read_text(encoding="utf-8"))
     config = yaml.safe_load((folder / "config.yaml").read_text(encoding="utf-8"))
     assert onboard.check_profile(profile) == [] and onboard.check_config(config) == []
-    assert "onboarding_questions" not in profile and "Pickup Diaries" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")
+    assert "onboarding_questions" not in profile and "usability sessions" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")
     first, second = fake.prompts[0][1], fake.prompts[1][1]
-    assert "never its facts" in first and "Velora Mobility" in first and "priority_sector: sport" in first
+    assert "never its facts" in first and "Hexalab Santé" in first and "priority_sector: healthcare" in first
     assert "country_code: FR" in first and "any field" in first and config["country"] == "FR"
-    assert "Courtside" in second and fake.prompts[0][0] == "onboard"  # the profile feeds the settings
+    assert "Conditions are not facts" in first and "never infer a gender" in first
+    assert "Hexalab" in second and fake.prompts[0][0] == "onboard"  # the profile feeds the settings
 
 
 def test_a_broken_answer_is_sent_back_once_with_its_problems(tmp_path, monkeypatch):
-    broken = EXAMPLE_CONFIG.replace("title_must_match: 'market", "title_must_match: '(market")  # unbalanced regex
+    broken = EXAMPLE_CONFIG.replace("title_must_match: 'design", "title_must_match: '(design")  # unbalanced regex
     fake = FakeClaude([EXAMPLE_PROFILE, broken, EXAMPLE_CONFIG])
     monkeypatch.setattr("hunter.llm.ClaudeCode", fake)
     cv, answers = files(tmp_path)
@@ -85,7 +86,7 @@ def test_word_and_short_cvs(tmp_path):
     for line in CV.splitlines():
         doc.add_paragraph(line)
     doc.save(tmp_path / "cv.docx")
-    assert "Velora Mobility" in onboard.cv_text(tmp_path / "cv.docx")
+    assert "Hexalab" in onboard.cv_text(tmp_path / "cv.docx")
     (tmp_path / "scan.txt").write_text("too short", encoding="utf-8")
     with pytest.raises(SystemExit, match="scanned PDF"):
         onboard.cv_text(tmp_path / "scan.txt")
@@ -94,15 +95,15 @@ def test_word_and_short_cvs(tmp_path):
 def test_the_interview_asks_the_country_first_and_follows_up_on_the_cv(tmp_path, monkeypatch):
     """No answers file: the questions are asked in the terminal, an unknown country is asked again, and Claude's
     follow-up questions about the CV are asked too, then folded into the profile."""
-    profile = (EXAMPLE_PROFILE + "\nonboarding_questions:\n  - How many players watch Pickup Diaries?\n"
-               "  - Your MSc dates?\n")
+    profile = (EXAMPLE_PROFILE + "\nonboarding_questions:\n  - How many usability sessions per month?\n"
+               "  - Your DN MADE dates?\n")
     fake = FakeClaude([profile, EXAMPLE_PROFILE, EXAMPLE_CONFIG])
     monkeypatch.setattr("hunter.llm.ClaudeCode", fake)
     monkeypatch.setattr(onboard, "_interactive", lambda: True)
     by_key = {"country": ["Atlantis", "Deutschland"], "home": ["Berlin"], "targets": ["data analyst"],
               "contracts": ["permanent"], "languages": ["German native, English C1"]}
     script = [a for key, *_ in onboard.QUESTIONS for a in by_key.get(key, [""])]
-    typed = iter(script + ["about 3,000 a week", ""])  # follow-ups: one answered, one skipped
+    typed = iter(script + ["about 10 a month", ""])  # follow-ups: one answered, one skipped
     asked = []
     monkeypatch.setattr("builtins.input", lambda prompt="": asked.append(prompt) or next(typed))
     cv, _ = files(tmp_path)
@@ -110,8 +111,8 @@ def test_the_interview_asks_the_country_first_and_follows_up_on_the_cv(tmp_path,
     assert asked[0].startswith("Which country") and asked[1].startswith("Which country")  # Atlantis: asked again
     assert "country_code: DE" in fake.prompts[0][1] and "Berlin" in fake.prompts[0][1]
     update = fake.prompts[1][1]
-    assert "Q: How many players watch Pickup Diaries?" in update and "A: about 3,000 a week" in update
-    assert "Your MSc dates?" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")  # skipped: kept for later
+    assert "Q: How many usability sessions per month?" in update and "A: about 10 a month" in update
+    assert "Your DN MADE dates?" in (folder / "QUESTIONS.md").read_text(encoding="utf-8")  # skipped: kept for later
     assert yaml.safe_load((folder / "config.yaml").read_text(encoding="utf-8"))["country"] == "DE"
 
 

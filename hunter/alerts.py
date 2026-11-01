@@ -18,7 +18,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from . import careers, sources
+from . import careers, geo, sources, targets
+from .web import UA
 
 log = logging.getLogger(__name__)
 SENDERS = re.compile(r"welcometothejungle|wttj|apec\.fr|linkedin\.com|hellowork|indeed|cadremploi|jobteaser|"
@@ -30,12 +31,13 @@ JOB_LINKS = {
     "cadremploi": re.compile(r"https://www\.cadremploi\.fr/emploi/detail_offre\?(?:[^\s\"'<>#]*&)?offreId=(\d+)"),
     "hellowork": re.compile(r"https://www\.hellowork\.com/fr-fr/emplois/(\d+)\.html"),
     "meteojob": re.compile(r"https://(?:www\.)?meteojob\.com/jobs/(\d+)"),
-    "indeed": re.compile(r"https://(?:[a-z]{2}\.|www\.)?indeed\.(?:com|fr)/[^\s\"'<>]*?[?&]jk=([0-9a-f]{16})"),
+    # Indeed: the country site the alert links to (fr.indeed.com, de.indeed.com, www.indeed.com...) is kept
+    "indeed": re.compile(r"https://((?:[a-z]{2}\.|www\.)?indeed\.(?:com|[a-z]{2}))/[^\s\"'<>]*?[?&]jk=([0-9a-f]{16})"),
 }
 CANONICAL = {"linkedin": "https://www.linkedin.com/jobs/view/{}",
              "cadremploi": "https://www.cadremploi.fr/emploi/detail_offre?offreId={}",
              "hellowork": "https://www.hellowork.com/fr-fr/emplois/{}.html", "meteojob": "https://www.meteojob.com/jobs/{}",
-             "indeed": "https://fr.indeed.com/viewjob?jk={}"}
+             "indeed": "https://{}/viewjob?jk={}"}
 TRACKER = re.compile(r"(^|\.)(click|clicks|links?|email|emails|e|t|trk|track|tracking|mail|mailing|news)\.|sendgrid|"
                      r"mailchimp|list-manage|/ls/click|/c/|redirect", re.I)
 MAX_RESOLVE = 150  # tracking links followed per run (a morning brings a dozen alert emails)
@@ -118,20 +120,24 @@ DETAIL = re.compile(r"\b(CDI|CDD|Int[ée]rim|Alternance|Stage|Freelance)\b|k€|
                     re.I)
 
 
-def from_block(board: str, url: str, title: str, lines: list[str], posted: str) -> dict | None:
+def from_block(board: str, url: str, title: str, lines: list[str], posted: str, country: str = "FR") -> dict | None:
     """Boards that refuse automated visits (APEC answers 403) still put the offer in the alert itself: title,
-    company, place, contract, salary and a summary. That block becomes the posting."""
+    company, place, contract, salary and a summary. That block becomes the posting. country: the candidate's, the
+    place when the block names none (alerts are set up for that country)."""
     lines = [l for l in lines if not NOISE.search(l)]
     title = title if len(title) >= 8 and not NOISE.search(title) else (lines[0] if lines else "")
     rest = [l for l in lines if l != title]
-    # "Lyon 01 - 69" (city - department) beats a company name that merely contains "France"
-    place = next((l for l in rest if DEPARTMENT.search(l) and len(l) <= 60), "") or         next((l for l in rest if PLACE.search(l) and len(l) <= 60), "")
-    company = next((l for l in rest if l != place and not DETAIL.search(l) and len(l) <= 60), "")
+    short = [l for l in rest if len(l) <= 60]
+    # "Lyon 01 - 69" (city - department) beats a company name that merely contains "France"; elsewhere any short
+    # line that names a place of the country ("Berlin", "München, Bayern").
+    place = (next((l for l in short if DEPARTMENT.search(l)), "") or next((l for l in short if PLACE.search(l)), "")
+             or next((l for l in short if not DETAIL.search(l) and geo.in_country(l, country)), ""))
+    company = next((l for l in short if l != place and not DETAIL.search(l)), "")
     if not title or not rest:
         return None
     description = "\n".join([title, *rest, "", "(Summary from the job alert email; the full posting is on the link.)"])
     return sources.job(id=f"alert:{url}", site=f"email alert ({board})", title=title, company=company,
-                       location=place or "France", url=url, apply_url=url, posted=posted,
+                       location=place or geo.country_name(country), url=url, apply_url=url, posted=posted,
                        description=description) | {"summary_only": True}
 
 
@@ -144,14 +150,14 @@ def job_link(url: str) -> tuple[str, str] | None:
         for board, pattern in JOB_LINKS.items():
             m = pattern.search(text)
             if m:
-                return board, (CANONICAL[board].format(m.group(1)) if board in CANONICAL else m.group(0))
+                return board, (CANONICAL[board].format(*m.groups()) if board in CANONICAL else m.group(0))
     return None
 
 
 def _resolve(url: str) -> str:
     """Where a tracking link lands, without downloading the page."""
     try:
-        r = requests.get(url, headers=careers.UA, timeout=15, allow_redirects=True, stream=True)
+        r = requests.get(url, headers=UA, timeout=15, allow_redirects=True, stream=True)
         r.close()
         return r.url
     except requests.RequestException:
@@ -179,7 +185,7 @@ def collect(cand, store, dry: bool = False) -> list[dict]:
     except (imaplib.IMAP4.error, OSError) as e:
         log.warning("job alert mailbox unreachable: %s", e)
         return []
-    jobs, resolved = [], 0
+    jobs, resolved, country = [], 0, targets.country(cand.config)
     try:
         last = int(store.get("alerts_uid", "0") or 0)
         if last:
@@ -207,7 +213,7 @@ def collect(cand, store, dry: bool = False) -> list[dict]:
                     seen.add(hit[1])
                     board, link = hit
                     j = None if board in BLOCKS_BOTS else to_job(board, link)
-                    j = j or from_block(board, link, text, block, posted)
+                    j = j or from_block(board, link, text, block, posted, country)
                     if j:
                         jobs.append(j | {"tier_hint": ""})
         if uids and not dry:

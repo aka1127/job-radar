@@ -30,7 +30,7 @@ def test_file_names_are_plain_and_hyphenated(cand):
     assert cand.file_stem == "Alex-Moreau"
     assert file_part("Société Générale") == "Societe-Generale"
     assert file_tag("L'Oréal Groupe") == "L-Oreal-Groupe"
-    assert file_tag("   ") == "Entreprise"
+    assert file_tag("   ") == "Company"
     for name in (file_tag("Alan"), cand.file_stem):
         assert "ats" not in name.lower().split("-")
 
@@ -47,20 +47,15 @@ def test_language_detection():
     assert detect_lang("Growth Manager") is None  # too short to tell: the scorer's guess is used instead
 
 
-def test_title_filter_keeps_marketing_roles_and_drops_the_rest(cand):
+def test_title_filter_keeps_design_roles_and_drops_the_rest(cand):
     ok = title_filter(cand.config)
-    keep = ["Chargé de marketing digital (H/F)", "Growth Marketing Manager", "Consultant SEA H/F", "CRM Manager",
-            "Head of paid", "Consultant SMA (H/F)", "Consultant Salesforce Marketing Cloud - F/H",
-            "SEO/GEO Account Manager Confirmé/Senior F/H", "Community Developer - Unannounced Projects",
-            "Social Media Manager", "Chargé(e) de recrutement international", "Traffic Manager",
-            "Account Manager", "Sales Development Representative", "Chargé de partenariats sport (H/F)",
-            "Chef de projet sponsoring", "Sports Marketing Manager", "Chef de projet événementiel", "Business Developer",
-            "Fan Engagement Lead"]
-    drop = ["Stage - Assistant marketing digital", "Alternance Chargé de communication", "Market Manager",
-            "Key Account Manager", "Chef de projet informatique", "Téléconseiller", "Senior Software Engineer",
-            "PREVENTEUR", "Projectionniste - animateur jeune public", "ADJOINT CHEF MAGASIN MATERIEL DE CAMPAGNE",
-            "CHARGE DE PROJET EN CONDUITE D'OPERATIONS", "Directeur Marketing", "Contrôleur de gestion retail et digital",
-            "Procurement Category Manager (Workplace and Marketing)",
-            "Marketing Intern", "Product Manager CRM", "Fraud Analyst - French Market"]
+    keep = ["Product Designer (H/F)", "UX Designer Senior", "UX/UI Designer - CDI", "Designer d'expérience utilisateur",
+            "UX Researcher", "Design System Lead", "Lead Product Designer", "Accessibility Specialist",
+            "Designer produit e-santé", "Service Designer", "Chef de projet UX", "Consultant accessibilité numérique (H/F)",
+            "Designer d'interface", "Senior Interaction Designer", "DesignOps Manager"]
+    drop = ["Stage - UX Designer", "Alternance Product Designer", "Graphic Designer", "Motion Designer",
+            "Designer textile", "Product Manager", "Front-end Developer", "Head of Design", "Industrial Designer",
+            "Marketing Designer", "Designer graphique", "Architecte d'intérieur", "UX Engineer", "Data Analyst",
+            "Game Designer", "Sound Designer", "Directeur artistique"]
     assert [t for t in keep if not ok(t)] == []
     assert [t for t in drop if ok(t)] == []
