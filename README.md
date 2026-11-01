@@ -207,7 +207,7 @@ docs/              configuration, countries, onboarding answers, roadmap, French
 python -m pytest
 ```
 
-158 tests, offline and on the fictional example: Telegram, job boards and Claude are faked; CVs are rendered and
+162 tests, offline and on the fictional example: Telegram, job boards and Claude are faked; CVs are rendered and
 read back for real, in French, English and German. They run on Linux and Windows in GitHub Actions.
 
 ## Roadmap

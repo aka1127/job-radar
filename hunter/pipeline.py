@@ -5,6 +5,7 @@ import logging
 import random
 import re
 import shutil
+import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -434,6 +435,30 @@ def sending_hours(cfg: dict, now: datetime | None = None) -> bool:
     return start <= (now or datetime.now()).hour < end
 
 
+def open_archive(french: bool) -> archive.Archive | None:
+    """The archive is a side record: when its database cannot be opened (another process holds it), the run goes on
+    without it and the postings are archived when they are seen again."""
+    try:
+        return archive.Archive(french=french)
+    except sqlite3.OperationalError as e:
+        log.warning("archive unavailable, this run goes on without it: %s", e)
+        return None
+
+
+def safe_save(arch: archive.Archive | None):
+    """arch.save as a function that never stops a run: a database that stays busy logs a warning and counts 0 new."""
+    if arch is None:
+        return None
+
+    def keep(jobs: list[dict]) -> int:
+        try:
+            return arch.save(jobs)
+        except sqlite3.OperationalError as e:
+            log.warning("archive save skipped for %d postings: %s", len(jobs), e)
+            return 0
+    return keep
+
+
 def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = None,
         boards: bool = True, career_pages: bool = True):
     cfg, store = cand.config, Store(cand)
@@ -452,7 +477,8 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
              "".join(f", {b} {h}h (catching up)" for b, h in windows.items() if h > hours),
              "".join(f", {b} rests this run" for b in sources.BOARDS if b not in windows))
     france = targets.country(cfg) == "FR"  # the French extras: département logic, crawled sites, open data, harvest
-    arch = None if dry else archive.Archive(french=france)  # every posting seen, all jobs, kept for the archive
+    arch = None if dry else open_archive(france)  # every posting seen, all jobs, kept for the archive
+    to_archive = safe_save(arch)  # a busy archive never stops the cycle
     raw = sources.collect(cand, windows) if boards else []
     if boards and not dry:
         for b in windows:
@@ -460,20 +486,25 @@ def run(cand, dry: bool = False, hours: int | None = None, limit: int | None = N
                 store.put(f"blocked_{b}", started)
     if boards and cfg["sources"].get("email_alerts", True):
         raw += alerts.collect(cand, store, dry)  # Welcome to the Jungle, APEC, LinkedIn alerts in a mailbox
-    if arch and raw:
-        log.info("archive: %d new postings from the boards and alerts", arch.save(raw))
+    if to_archive and raw:
+        log.info("archive: %d new postings from the boards and alerts", to_archive(raw))
     cands = prefilter(raw, title_ok, store)
     if career_pages and cfg["sources"].get("career_pages"):
         if not dry:
             grow_watchlist(cand, store, raw, cands)
-        cands += prefilter(careers.poll(store, cfg, title_ok, keep=arch.save if arch else None), title_ok, store)
+        cands += prefilter(careers.poll(store, cfg, title_ok, keep=to_archive), title_ok, store)
     if arch and france:  # what the background crawlers and the France Travail harvest archived since the last run
         since = store.get("last_run") or (datetime.now(timezone.utc) - timedelta(
             hours=cfg["scraping"]["first_run_hours"])).isoformat(timespec="seconds")
         harvested = tuple(s["name"] for s in sitemaps.SITES) + ("France Travail", opendata.SOURCE)
         oldest = (datetime.now(timezone.utc) - timedelta(days=cfg["career_pages"]["max_age_days"])).date().isoformat()
-        fresh = [j for j in arch.recent(since, harvested)  # still open, recent, and open to someone outside the
-                 if opendata.open_for(j) and (j["posted"] or "9999") >= oldest]  # civil service
+        try:
+            crawled = arch.recent(since, harvested)
+        except sqlite3.OperationalError as e:
+            log.warning("archive busy, crawled offers wait for the next run: %s", e)
+            crawled = []
+        fresh = [j for j in crawled  # still open, recent, and open to someone outside the civil service
+                 if opendata.open_for(j) and (j["posted"] or "9999") >= oldest]
         cands += prefilter(fresh, title_ok, store)
     if not dry:
         cands += store.pending(cfg.get("pending_days", 7))

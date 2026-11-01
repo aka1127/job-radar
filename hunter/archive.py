@@ -1,12 +1,16 @@
 """The archive: every job posting any source returns, whatever the candidate, in one database per machine.
 One row per posting: seeing it again only refreshes last_seen and keeps the longest description. For a candidate in
 France the place is also reduced to a département (rules below, then the official commune directory) so the archive
-can be counted by area; elsewhere the French rules stay off (Archive(french=False))."""
+can be counted by area; elsewhere the French rules stay off (Archive(french=False)).
+The loop and the background crawler share the database, each with its own connection: it runs in WAL mode, every
+write is committed at once, and a database that stays busy raises sqlite3.OperationalError to the caller (the
+archive is a side record: the pipeline logs it and goes on)."""
 import json
 import logging
 import re
 import sqlite3
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -18,6 +22,7 @@ from .text import fold
 
 log = logging.getLogger(__name__)
 DB = HOME / "data" / "jobs.db"
+TIMEOUT = 60  # seconds a connection waits for a busy database before it gives up (tests lower it)
 GEO = "https://geo.api.gouv.fr/communes"  # official French commune directory, free and open
 SCHEMA = """
 create table if not exists postings (
@@ -151,8 +156,14 @@ class Archive:
         """french=False (a candidate outside France): no département parsing, no commune lookups."""
         path = path or DB  # read at call time, so tests can point it elsewhere
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(path, timeout=60, check_same_thread=False)
+        self.db = sqlite3.connect(path, timeout=TIMEOUT, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
+        try:  # WAL: readers never block a commit, a commit never blocks readers (the crawler and the loop share it)
+            mode = self.db.execute("pragma journal_mode=wal").fetchone()[0]
+            if mode != "wal":
+                log.info("archive journal mode stays %s", mode)
+        except sqlite3.OperationalError as e:  # busy or read-only right now: the rollback journal still works
+            log.info("archive could not switch to WAL: %s", e)
         self.db.executescript(SCHEMA)
         self._lock = threading.Lock()
         self.french = french
@@ -176,43 +187,53 @@ class Archive:
             log.info("commune lookup failed for %s: %s", name, e)
             return ""  # not cached: asked again next time
         dep = (hits[0].get("codeDepartement") or "") if isinstance(hits, list) and hits else ""
-        with self._lock:
-            self.db.execute("insert or replace into places (name, department) values (?, ?)", (key, dep))
+        with self._lock:  # committed at once: an open write would hold the database through the next lookups
+            self._commit("insert or replace into places (name, department) values (?, ?)", (key, dep))
         return dep
 
-    def save(self, jobs: list[dict], lookups: int = 300) -> int:
+    def save(self, jobs: list[dict], lookups: int = 300, lookup_seconds: float = 90) -> int:
         """Store every posting; returns how many were not in the archive yet. Up to `lookups` unknown towns are
-        looked up per call (the others get their département when seen again)."""
+        looked up per call, for at most `lookup_seconds` (the others get their département when seen again).
+        Raises sqlite3.OperationalError when the database stays busy; nothing is left half-written."""
         jobs = [j for j in jobs if j.get("id") and j.get("title")]
         if not jobs:
             return 0
-        deps = {}
+        deps, until = {}, time.monotonic() + lookup_seconds
         for j in jobs:
             dep = j.get("department") or (department(j.get("location") or "", j.get("postcode") or "") if self.french else "")
-            if not dep and self.french and lookups > 0 and j.get("location"):
+            if not dep and self.french and lookups > 0 and j.get("location") and time.monotonic() < until:
                 lookups -= 1
                 dep = self.lookup(j["location"])
             deps[j["id"]] = dep or ""
+        return self._write(jobs, deps)
+
+    def _write(self, jobs: list[dict], deps: dict[str, str]) -> int:
+        """The batch in one short transaction, after every lookup: the database is never held while waiting on the
+        network."""
         seen = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        ids = [j["id"] for j in jobs]
         with self._lock:
-            ids = [j["id"] for j in jobs]
-            known = set()
-            for i in range(0, len(ids), 500):
-                chunk = ids[i:i + 500]
-                known |= {r[0] for r in self.db.execute(
-                    f"select id from postings where id in ({','.join('?' * len(chunk))})", chunk)}
-            self.db.executemany("""
-                insert into postings (id, key, source, title, company, location, postcode, department, contract,
-                                      rome, posted, url, apply_url, description, first_seen, last_seen, extra)
-                values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                on conflict(id) do update set last_seen=excluded.last_seen,
-                    description=case when length(excluded.description) > length(coalesce(postings.description, ''))
-                                     then excluded.description else postings.description end,
-                    contract=coalesce(nullif(excluded.contract, ''), postings.contract),
-                    company=coalesce(nullif(postings.company, ''), excluded.company),
-                    department=coalesce(nullif(postings.department, ''), excluded.department),
-                    extra=excluded.extra""", [_row(j, seen, deps[j["id"]]) for j in jobs])
-            self.db.commit()
+            try:
+                known = set()
+                for i in range(0, len(ids), 500):
+                    chunk = ids[i:i + 500]
+                    known |= {r[0] for r in self.db.execute(
+                        f"select id from postings where id in ({','.join('?' * len(chunk))})", chunk)}
+                self.db.executemany("""
+                    insert into postings (id, key, source, title, company, location, postcode, department, contract,
+                                          rome, posted, url, apply_url, description, first_seen, last_seen, extra)
+                    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    on conflict(id) do update set last_seen=excluded.last_seen,
+                        description=case when length(excluded.description) > length(coalesce(postings.description, ''))
+                                         then excluded.description else postings.description end,
+                        contract=coalesce(nullif(excluded.contract, ''), postings.contract),
+                        company=coalesce(nullif(postings.company, ''), excluded.company),
+                        department=coalesce(nullif(postings.department, ''), excluded.department),
+                        extra=excluded.extra""", [_row(j, seen, deps[j["id"]]) for j in jobs])
+                self.db.commit()
+            except sqlite3.OperationalError:
+                self.db.rollback()  # a busy database: the next save starts clean
+                raise
         return len(set(ids) - known)
 
     def recent(self, since: str, sources: tuple[str, ...]) -> list[dict]:
@@ -237,9 +258,17 @@ class Archive:
 
     def put(self, key: str, value: str):
         with self._lock:
-            self.db.execute("insert into meta (k, v) values (?, ?) on conflict(k) do update set v=excluded.v",
-                            (key, value))
+            self._commit("insert into meta (k, v) values (?, ?) on conflict(k) do update set v=excluded.v",
+                         (key, value))
+
+    def _commit(self, sql: str, params: tuple = ()):
+        """One statement committed at once (call under self._lock); a busy database is rolled back and raised."""
+        try:
+            self.db.execute(sql, params)
             self.db.commit()
+        except sqlite3.OperationalError:
+            self.db.rollback()
+            raise
 
     def stats(self) -> dict:
         """What the archive holds: totals, freshness, and the split by source, area and contract."""

@@ -3,6 +3,7 @@ time, politely, by a background thread, into the national archive. The candidate
 import logging
 import random
 import re
+import sqlite3
 import threading
 import time
 
@@ -67,8 +68,15 @@ def harvest_forever(stop: threading.Event):
     """Background thread of the loop: keeps every sitemap site read, an hour of reading per site per turn."""
     from . import opendata
 
-    arch = Archive()  # its own connection: SQLite connections stay in their thread
+    arch = None
     while not stop.is_set():
+        if arch is None:
+            try:
+                arch = Archive()  # its own connection: SQLite connections stay in their thread
+            except sqlite3.OperationalError as e:  # another process holds the database: try again later
+                log.warning("archive busy, the crawl waits: %s", e)
+                stop.wait(60)
+                continue
         new = 0
         try:  # the State's public-sector offers file, when data.gouv.fr has a new version (checked once a day)
             new += opendata.import_due(arch)
