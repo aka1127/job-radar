@@ -57,17 +57,21 @@ flowchart TD
 
 ## Quick start
 
-Python 3.12 on Windows, macOS or Linux. Claude Code must be installed and logged in once (`claude` in a terminal).
+Python 3.12 or newer on Windows, macOS or Linux. [Claude Code](https://claude.com/claude-code) must be installed and
+logged in once (`claude` in a terminal). Clone the repository into a short path on Windows (long paths break pip),
+create a virtual environment in it (`.venv` is ignored by git and picked up by the scripts), then:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 ```bash
 python -m playwright install chromium
 ```
 
-Onboard yourself (the interview takes about ten minutes, then Claude writes your files):
+On Linux add `--with-deps` to that last command once, so Chromium gets its system libraries. Copy `.env.example` to
+`.env` (secrets live there, never in git). Then onboard yourself (the interview takes about ten minutes, then Claude
+writes your files):
 
 ```bash
 python -m hunter onboard alex --cv path/to/cv.pdf
@@ -75,8 +79,9 @@ python -m hunter onboard alex --cv path/to/cv.pdf
 
 It writes `candidates/alex/profile.yaml` (the facts) and `config.yaml` (the targets), in the format of
 [`candidates/example`](candidates/example), and checks them. Read both: the profile is the only source of facts the
-engine will ever use. To answer in a file instead of the terminal, pass
-`--answers` with a copy of [docs/onboarding-answers.example.yaml](docs/onboarding-answers.example.yaml).
+engine will ever use; your conditions (salary floor, contracts, what to avoid) stay in the settings and never reach
+a CV. To answer in a file instead of the terminal, pass `--answers` with a copy of
+[docs/onboarding-answers.example.yaml](docs/onboarding-answers.example.yaml).
 
 Connect Telegram ([TELEGRAM_SETUP.md](TELEGRAM_SETUP.md)), check everything, and find the company boards with jobs in
 your country (the first refresh checks ~28,700 public boards and takes about an hour; the loop also discovers
@@ -113,18 +118,27 @@ Nothing about a person or a country is in the code. Each person is a folder (see
 |---|---|
 | `candidates/<name>/profile.yaml` | Facts: jobs, dates, facts per job, metrics, confirmed skills, education, languages, writing notes. |
 | `candidates/<name>/config.yaml` | Targets: country, home and radius, CV languages, contracts, searches, title filters, score bars, job families and how each angles the CV, an optional priority sector. |
-| `config.yaml` | Engine settings shared by everyone: models, pacing, caps, sources. |
+| `config.yaml` | Engine settings shared by everyone: models, pacing, caps, sources, and the brand (name, colors, texts). |
 
-- **Country**: places are matched with GeoNames (every country, every city above 15,000 people, local names of big
-  cities), the home area is every city within your radius, contracts are named the local way, and the scorer,
-  screener and letters are told where you are. France has the most complete pack ([countries.md](docs/countries.md)).
+- **Country**: places are matched with GeoNames (every country, every city above 15,000 people, under their local
+  and English names: München and Munich, Lisboa and Lisbon), the home area is every city within your radius,
+  contracts are named the local way, and the scorer, screener and letters are told where you are. France has the
+  most complete pack ([countries.md](docs/countries.md)).
 - **Field**: job families, the title filters, the triage rules and the field's vocabulary come from your config,
   so an engineer, a nurse, a buyer and a designer each get their own.
-- **Priority sector**: optional (sport for the example). Its core roles get a lower score bar, go first in the
+- **Priority sector**: optional (healthcare for the example). Its core roles get a lower score bar, go first in the
   queue when they also pass the normal bar, and get their own look in Telegram and their own CV angle.
 
-The fictional [example person](candidates/example) (Alex Moreau, Lyon, digital marketing with sport first) runs
-the demo and the tests; `tests/test_world.py` moves them to Germany to prove nothing is French by default.
+The fictional [example person](candidates/example) (Alex Moreau, Lyon, product designer with healthcare first) runs
+the demo and the tests; `tests/test_world.py` moves them to Germany to prove nothing is French by default. Set
+`HUNTER_HOME` to keep `candidates/`, `data/`, `output/` and `.env` outside the checkout.
+
+## Make it yours
+
+The look and the words live in one place, `brand:` and `texts:` in [config.yaml](config.yaml): the product name,
+the CV palette, the badge color, the font, the priority look of the Telegram header, and every sentence the person
+reads in Telegram (buttons, cards, help, weekly summary), so a translation or a rebrand is a config change. The
+CV, letter and header templates are plain HTML and CSS in `templates/`.
 
 ## Truthful by design
 
@@ -138,7 +152,8 @@ the demo and the tests; `tests/test_world.py` moves them to Germany to prove not
 ## Respectful by design
 
 - Every web page a crawler opens is checked against the site's `robots.txt` first (`protego`), with pauses between
-  pages; a site that answers with a bot check is left alone for hours.
+  pages and an honest user agent that names this project; a site that answers with a bot check is left alone for
+  hours.
 - Company boards are read through the public JSON APIs their own career pages use, within one time budget per run.
 - Boards whose terms forbid scraping (LinkedIn, Indeed, Glassdoor, HelloWork) are **off by default**: their job
   alert emails bring the same jobs ([ALERTS_SETUP.md](ALERTS_SETUP.md)). Turning one on is the operator's choice and
@@ -159,7 +174,8 @@ the demo and the tests; `tests/test_world.py` moves them to Germany to prove not
 | `python -m hunter usage` | Claude calls, minutes and tokens per day |
 | `python -m hunter doctor` | Check the setup |
 
-Add `--who <name>` when there is more than one person.
+Add `--who <name>` when you run the engine for more than one person (the example does not count); `usage` and
+`archive` need no person.
 
 ## Project layout
 
@@ -171,6 +187,7 @@ hunter/            the engine
   targets.py       country, home area, contracts, CV languages, families, priority, CV angle (from the config)
   geo.py           countries, cities, home areas (GeoNames)
   i18n.py          CV languages: section titles, months, letter date lines, language detection
+  brand.py         the look and the words (defaults for config.yaml's brand: and texts:)
   careers.py       company career boards and feeds, robots.txt checks
   alerts.py        job alert emails (IMAP)
   sources.py       job board searches and France Travail
@@ -190,8 +207,8 @@ docs/              configuration, countries, onboarding answers, roadmap, French
 python -m pytest
 ```
 
-148 tests, offline and on the fictional example: Telegram, job boards and Claude are faked; CVs are rendered and
-read back for real, in French, English and German.
+158 tests, offline and on the fictional example: Telegram, job boards and Claude are faked; CVs are rendered and
+read back for real, in French, English and German. They run on Linux and Windows in GitHub Actions.
 
 ## Roadmap
 
@@ -210,4 +227,5 @@ skill comes from [ats-resume-skill](https://github.com/msdanyg/ats-resume-skill)
 
 ## License
 
-MIT. Use it for your own job search and respect each job site's terms.
+MIT (see [LICENSE](LICENSE); third-party parts are listed in [NOTICE.md](NOTICE.md)). Use it for your own job search
+and respect each job site's terms.

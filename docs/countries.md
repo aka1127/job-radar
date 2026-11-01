@@ -11,12 +11,12 @@ Job Radar works in any country. The country is the first onboarding question and
 | Board discovery (`python -m hunter boards --refresh`) | checks ~28,700 public ATS boards and keeps those with jobs in the country |
 | Web discovery of career pages | Claude searches the web for employers hiring in the country |
 | Any careers page with schema.org `JobPosting` data | `python -m hunter companies add <url>` |
-| Job alert emails | LinkedIn, Indeed, Glassdoor and local boards whose emails link to their offers |
+| Job alert emails | LinkedIn, Indeed (each country's site: de.indeed.com, www.indeed.com...), Glassdoor and local boards whose emails link to their offers; an offer whose email names no place is placed in the person's country |
 | Optional job board searches | LinkedIn anywhere; Indeed and Glassdoor in the 62 countries JobSpy supports; off by default (their terms forbid scraping) |
-| Location matching | GeoNames: country names and codes, every city above 15,000 people, local names of big cities (München, Lisboa) |
-| Home area | every city within `home_radius_km` of `home` (tier 1, scored first, with remote jobs) |
-| Contracts | permanent, fixed_term, freelance, interim, internship_or_apprenticeship, in every country's terms |
-| Scoring, screener, letters | told the country: "remote, open to people in Germany", the local letter conventions |
+| Location matching | GeoNames: country names and codes (also as people type them: Czech Republic, Côte d'Ivoire, Allemagne), every city above 15,000 people, local and English names (München and Munich, Lisboa and Lisbon, Köln and Cologne) |
+| Home area | every spelling of every city within `home_radius_km` of `home` (tier 1, scored first, with remote jobs); "remote" is understood in the seven CV languages (remote, télétravail, Homeoffice, teletrabajo, thuiswerken...). A home town under 15,000 people is unknown to GeoNames: name the nearest bigger city (`doctor` warns) |
+| Contracts | permanent, fixed_term, freelance, interim, internship_or_apprenticeship; the scorer reads each country's words (CDI, unbefristet, indefinido...); the cards print CDI / CDD in France and Permanent / Fixed-term elsewhere |
+| Scoring, screener, letters | told the country: "remote, open to people in Germany", the local letter conventions. Letter and message rules are detailed for French and English; the other languages get the same structure with their usual salutations |
 
 ## France: the most complete pack
 
@@ -25,6 +25,8 @@ The engine was born in France, so France has extras. These start only when `coun
 - The State's public-sector offers: the daily open-data file and the 108 departmental feeds.
 - Background crawlers of sites that publish every offer in a sitemap (jobposting.pro, Jobs that make sense).
 - `home_departments`: departments instead of a radius, for a precise home area; CDI / CDD labels on the cards.
+- The archive's département column and its commune lookups (geo.api.gouv.fr); elsewhere the archive keeps the
+  postings without them.
 
 These work for whoever uses them: readers for French alert emails (APEC and Cadremploi, read from the email since
 their pages refuse bots; HelloWork and Meteojob, read from their offer pages), and Welcome to the Jungle and

@@ -28,19 +28,19 @@ Text fields exist once per CV language (`title_en`, `title_de`...); anything mis
 
 | Key | What it does |
 |---|---|
-| `country` | ISO code of the country to work in (`FR`, `DE`, `GB`, `US`, `MA`...). See [countries.md](countries.md) |
-| `home`, `home_label` | home city (and region) and its short name for messages |
+| `country` | ISO code of the country to work in (`FR`, `DE`, `GB`, `US`, `MA`...), required. See [countries.md](countries.md) |
+| `home`, `home_label` | home city (and region) and its short name for messages. The city must be one GeoNames knows (15,000+ people), under its local or English name; for a smaller town give the nearest such city (`doctor` warns) |
 | `home_radius_km` | cities this close are the home area: tier 1 with remote jobs, scored first (default 40) |
 | `home_departments` | France only, optional: departments instead of a radius |
 | `cv_languages` | languages the CVs can be written in (`en, fr, es, de, it, pt, nl`); default English and the country's language |
 | `locations` | board search places with their tier: `{query: "Lyon, France", tier: 1}`, `{query: "France", tier: 2}` |
 | `level_note` | for the scorer: core targets, the right level, what is a stretch, what scores low |
-| `min_score` | score bar per tier: `{1: 55, 2: 65}` |
+| `min_score` | score bar per tier, exactly this shape: `{1: 55, 2: 65}` |
 | `contracts` | accepted: `permanent`, `fixed_term`, `freelance`, `interim`, `internship_or_apprenticeship`, `unknown` (French `CDI`/`CDD` also understood) |
 | `dealbreakers` | hard blockers the scorer looks for |
 | `families` | job families with a one-line description; the scorer tags each posting with one |
 | `default_family` | the family used when none fits |
-| `priority` | optional sector to put first: `family`, `label`, `tag`, `emoji`, `icon`, `min_score` (lower bar for that family's roles), `sector` (what counts as that sector), `note` (what proves it) |
+| `priority` | optional sector to put first: `family`, `label`, `tag`, `emoji`, `icon` (`star`, `heart`, `health`, `bolt`, `leaf`, `briefcase`, `flag`, `pin`, `shield`, `globe`, `trophy`, `music`), `min_score` (lower bar for that family's roles, same shape as `min_score`), `sector` (what counts as that sector), `note` (what proves it) |
 | `framing_notes` | per family: which experiences lead the CV and how many bullets each gets |
 | `writing_rules` | extra rules for the field's vocabulary, added to every prompt |
 | `neutral_title` | a neutral way to name the profession per language, for summaries |
@@ -65,9 +65,30 @@ Text fields exist once per CV language (`title_en`, `title_de`...); anything mis
 | `max_scores_per_run`, `max_scores_per_day` | caps on full AI scores |
 | `max_packs_per_run`, `max_packs_per_day`, `queue_days`, `pending_days` | how many packs, how long matches wait |
 | `company_brief`, `brand_colors`, `followup_after_days` | company research, brand-tinted CVs, follow-up timing |
+| `crawl.user_agent` | how the crawler introduces itself (default: an honest agent naming this project) |
+| `brand` | the look: `name`, `accent`, `accent_ink`, `soft` (CV and letter palette when the company gives no color), `badge` (monogram badges), `font` (family name of the files in `assets/fonts`), `priority` (`gradient`, `tag`, `tag_ink` of the Telegram header for the priority sector). Defaults in `hunter/brand.py` |
+| `texts` | every sentence the person reads in Telegram, by key (`btn_applied`, `help`, `followup`, `weekly_title`...): translate or reword here, keeping the `{placeholders}`. Keys and English defaults in `hunter/brand.py` |
+
+A person's `config.yaml` can override `brand` and `texts` too (one person in French, another in English).
+
+## Where things live
+
+- `HUNTER_HOME` (environment variable): the folder holding `candidates/`, `data/`, `output/` and `.env`. Unset, it
+  is the checkout itself. The engine's own files (`templates/`, `assets/`, `candidates/example`) always stay with the
+  code.
+- `HUNTER_OUTPUT`: the packs folder, when it should differ from `<HUNTER_HOME>/output`.
+- `HUNTER_CANDIDATE`: the person to use when `--who` is not given (otherwise: your only person).
 
 ## .env: secrets
 
 Copy `.env.example`. Telegram bot token and chat ids, the alerts mailbox (an app password), optional email
 delivery, optional France Travail credentials, optional health-check URL. A `_<NAME>` suffix makes a value apply
 to one person only (`TELEGRAM_CHAT_ID_ALEX`). Never commit `.env`.
+
+## The onboarding answers
+
+Only `country`, `home`, `targets`, `contracts` and `languages` are required; the rest sharpens the settings. Your
+conditions (salary floor, contracts, schedule, remote and relocation wishes, what to avoid) go to `config.yaml`
+only: they never enter the profile, so they never reach a CV or a letter. `gender_titles` says which form job
+titles take in languages that gender them (German, French, Spanish, Italian, Portuguese); without it the CV's own
+forms are kept.

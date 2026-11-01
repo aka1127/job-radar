@@ -14,6 +14,9 @@ Where Job Radar goes from a personal engine to something anyone can run.
   places are matched with GeoNames; the onboarding interview starts with the country.
 - **Review fixes (Oct 2026).** Duplicate sends across boards, one deadline for all career platforms, unscored
   postings that expire.
+- **Public release fixes (Nov 2026).** Home areas under local and English city names, remote words in every CV
+  language, the French archive rules off outside France, alert emails placed in the person's country, one `brand:`
+  and `texts:` block for the look and the words, `HUNTER_HOME`, a venv-aware install, tests on Linux and Windows.
 
 ## Next
 

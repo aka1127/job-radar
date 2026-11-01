@@ -7,7 +7,9 @@ buttons under each job track what happened next.
 2. Send `/newbot`, give it a name (e.g. `Job Radar`) and a username ending in `bot` (e.g. `alex_jobradar_bot`).
 3. BotFather replies with a token like `1234567890:AAH...xyz`. Copy it.
 4. Open `.env` (copy `.env.example` first) and paste it after `TELEGRAM_BOT_TOKEN=`, no spaces, no quotes.
-5. Run `python -m hunter telegram --who alex`, open the bot in Telegram and tap Start.
+5. Run `python -m hunter telegram --who alex`, open the bot in Telegram and tap Start. The command shows who wrote
+   to the bot (name, username, chat id) and asks you to confirm before it connects that chat: the bot's username is
+   public, and the CVs must reach the right phone.
 
 Never share the token: anyone with it can send messages as the bot.
 
@@ -20,9 +22,10 @@ as the admin chat (errors come to you, jobs go to them) and restarts the hunter.
 
 Three messages per job, so jobs stand apart when you scroll:
 1. A header picture in the company's colors with its logo, "NEW JOB" (or "YOUR LINK" for a link you sent; jobs in
-   the candidate's priority sector get one fixed look, e.g. "SPORT · PRIORITY"), the company, the role and the fit
-   score. Under it, the short card: place, CDI/CDD, how fresh, why it fits, gaps, ATS and screener scores, a
-   "Check before sending" line only when something needs a look, and the buttons I applied / Not for me.
+   the candidate's priority sector get one fixed look, e.g. "HEALTH · PRIORITY"), the company, the role and the fit
+   score. Under it, the short card: place, contract, how fresh, why it fits, gaps, ATS and screener scores, a
+   "Check before sending" line only when something needs a look, and the buttons I applied / Not for me. Every
+   sentence can be reworded or translated in `config.yaml` (`texts:`).
 2. The CV and the cover letter (PDF), named like a person would: `Alex-Moreau-CV-Company.pdf`.
 3. The LinkedIn note and the message for once they accept, ready to copy, with the interview prep collapsed
    underneath.

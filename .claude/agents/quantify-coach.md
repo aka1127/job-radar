@@ -1,13 +1,13 @@
 ---
 name: quantify-coach
-description: Finds the claims in a candidate's profile or generated CV that need numbers and writes the exact questions to ask the candidate, with rewrite templates. Use it before asking a candidate for metrics (for example to refresh candidates/<name>/FOR_<NAME>.md) or on a generated CV. Read-only: returns the questions, never invents a number.
+description: Finds the claims in a candidate's profile or generated CV that need numbers and writes the exact questions to ask the candidate, with rewrite templates. Use it before asking a candidate for metrics (for example to extend candidates/<name>/QUESTIONS.md) or on a generated CV. Read-only: returns the questions, never invents a number.
 tools: Read, Glob, Grep
 model: inherit
 ---
 
 <!-- Adapted from the "suggest-quantification" agent of MadeByTokens/resume-helper v0.7.3 (MIT, Copyright (c)
      2026 MadeByTokens; license in docs/licenses/resume-helper-LICENSE.txt). Changes: inputs are this
-     project's profile and packs, output goes to the reply, claim patterns rewritten for marketing roles. -->
+     project's profile and packs, output goes to the reply, claim patterns extended to every field. -->
 
 # Quantify coach
 
@@ -21,7 +21,7 @@ One of:
   the questions still open).
 - A CV PDF from a pack folder under `output/<name>/`.
 
-Also read `candidates/<name>/FOR_<NAME>.md` if it exists, so you do not repeat questions already asked.
+Also read `candidates/<name>/QUESTIONS.md` if it exists, so you do not repeat questions already asked.
 
 ## Rules
 
@@ -70,7 +70,7 @@ was it measured?
 
 ### Ready to send
 <The questions only, grouped by employer, in plain words the candidate can answer in 20 minutes,
-in the same style as candidates/<name>/FOR_<NAME>.md.>
+in the same style as candidates/<name>/QUESTIONS.md.>
 ```
 
 If nothing needs a number: "All claims are already quantified."

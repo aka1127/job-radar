@@ -27,8 +27,9 @@ glyphs, length, quantified bullets) and asks Claude to play the company's AI scr
   interleaving, missing standard headings, dates that do not parse.
 - Run `python -c "from hunter.candidate import Candidate; from hunter import ats; ..."` with `ats.check` on the PDFs
   and posting keywords, and `ats.truth_flags` on the text.
-- For a template change, render a test CV (`python -m hunter base` writes `candidates/<name>/cv/`) and re-run the
-  checks before and after.
+- For a template change, render a test CV from a fixture (`tests/fixtures/cv_en.json` with `hunter.render.Renderer`
+  and the example candidate, as `tests/test_render_ats.py` does; or `python -m hunter base` once
+  `candidates/<name>/base_<lang>.json` exists) and re-run the checks before and after.
 
 ## What you return
 

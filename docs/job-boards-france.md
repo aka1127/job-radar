@@ -347,35 +347,6 @@ All reach us through the France Travail harvest.
   Code de la propriété intellectuelle art. L342-1); repeated extraction of a substantial part of a board's offers can
   be challenged. APIs, published feeds and partner agreements avoid that risk.
 
-## 22. Needs the operator
-
-1. France Travail credentials (in progress) and a read of the API terms.
-2. A free Adzuna developer account, if wanted, plus its terms.
-3. Alert accounts pointed at the alerts mailbox: Cadremploi, Indeed, HelloWork, Meteojob, Jobs that make sense;
-   JobTeaser through a school account.
-4. A decision on JobSpy's LinkedIn, Indeed, Glassdoor and HelloWork searches (robots.txt and terms, above).
-5. Optional partner requests: FNCDG (Emploi Territorial export), Leboncoin (permission), Talent.com or Jobijoba feeds.
-6. For whoever edits the code: rename "Pernodricard" to Pernod Ricard and the two Accor boards ("Mama Shelter" is
-   AccorHotel, "Adagio Aparthotel" is AccorCorpo); let `companies add` accept Talentsoft and other feed URLs; add
-   microdata to the JSON-LD reader; Workday boards whose postings lack `locationsText` (Accenture) are dropped.
-
-## 23. Added to the watchlist on 31 Oct 2026
-
-Each was checked first (API answer, or listing plus one offer page with JobPosting data):
-
-| Board | URL | Reader | What it showed |
-|---|---|---|---|
-| Pernod Ricard | https://pernodricard.wd3.myworkdayjobs.com/pernod-ricard | Workday | 302 jobs, 153 in France |
-| Thales | https://thales.wd3.myworkdayjobs.com/Careers | Workday | 2,000+ jobs; France search full |
-| Sanofi | https://sanofi.wd3.myworkdayjobs.com/SanofiCareers | Workday | 937 jobs, 156 in France |
-| Kiabi | https://jobs.smartrecruiters.com/Kiabi | SmartRecruiters | 119 France jobs (stylist, retail) |
-| LVMH | https://jobs.smartrecruiters.com/LVMH | SmartRecruiters | 4 Paris jobs (e-merchandising, online buyer) |
-| Randstad, marketing | https://www.randstad.fr/emploi/q-marketing/ | JSON-LD | 31 offers (chef de produit marketing, assistant marketing) |
-| Randstad, communication | https://www.randstad.fr/emploi/q-communication/ | JSON-LD | 30 offers (chargé de communication digitale, chef de projet événementiel) |
-| Expectra (Randstad Professional) | https://www.randstadprofessional.fr/emploi/commercial_marketing/id=15/ | JSON-LD | 39 offers |
-| Synergie | https://www.synergie.fr/trouver-un-emploi/secteurs/edition-communication-marketing | JSON-LD | assistant marketing, commercial B2B |
-| CRIT | https://www.crit-job.com/offres?motsClefs=marketing | JSON-LD | 20 offers (assistante communication, analyste de marché) |
-
 ## Sources
 
 - France Travail partner list: https://www.francetravail.fr/candidat/vos-services-en-ligne/des-partenaires-pour-vous-propos.html
